@@ -42,6 +42,10 @@
 
 #include <QTimer>
 
+QT_BEGIN_NAMESPACE
+class QDBusInterface;
+QT_END_NAMESPACE
+
 class ConnectionHelper : public QObject
 {
     Q_OBJECT
@@ -82,4 +86,5 @@ private:
     NetworkManager *netman;
     NetworkService *defaultService;
 
+    QDBusInterface *connectionSelectorInterface;
 };

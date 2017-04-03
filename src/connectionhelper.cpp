@@ -45,8 +45,10 @@ ConnectionHelper::ConnectionHelper(QObject *parent)
     , m_networkConfigReady(false)
     , m_delayedAttemptToConnect(false)
     , m_detectingNetworkConnection(false)
-    , netman(NetworkManagerFactory::createInstance()),
-      connmanIsReady(false)
+    , connmanIsReady(false)
+    , netman(NetworkManagerFactory::createInstance())
+    , connectionSelectorInterface(nullptr)
+
 {
     connect(&m_timeoutTimer, SIGNAL(timeout()), this, SLOT(emitFailureIfNeeded()));
     m_timeoutTimer.setSingleShot(true);
@@ -212,23 +214,29 @@ void ConnectionHelper::openConnectionDialog()
 {
     // open Connection Selector
 
-    QDBusInterface *connSelectorInterface = new QDBusInterface(QStringLiteral("com.jolla.lipstick.ConnectionSelector"),
-                                                               QStringLiteral("/"),
-                                                               QStringLiteral("com.jolla.lipstick.ConnectionSelectorIf"),
-                                                               QDBusConnection::sessionBus(),
-                                                               this);
+    if (!connectionSelectorInterface) {
+        QDBusConnection connection = QDBusConnection::sessionBus();
 
-    connSelectorInterface->connection().connect(QStringLiteral("com.jolla.lipstick.ConnectionSelector"),
-                                                QStringLiteral("/"),
-                                                QStringLiteral("com.jolla.lipstick.ConnectionSelectorIf"),
-                                                QStringLiteral("connectionSelectorClosed"),
-                                                this,
-                                                SLOT(connectionSelectorClosed(bool)));
+        connectionSelectorInterface = new QDBusInterface(
+                    QStringLiteral("com.jolla.lipstick.ConnectionSelector"),
+                    QStringLiteral("/"),
+                    QStringLiteral("com.jolla.lipstick.ConnectionSelectorIf"),
+                    connection,
+                    this);
+
+        connection.connect(
+                    QStringLiteral("com.jolla.lipstick.ConnectionSelector"),
+                    QStringLiteral("/"),
+                    QStringLiteral("com.jolla.lipstick.ConnectionSelectorIf"),
+                    QStringLiteral("connectionSelectorClosed"),
+                    this,
+                    SLOT(connectionSelectorClosed(bool)));
+    }
 
     QList<QVariant> args;
     args.append("wlan");
-    QDBusMessage reply = connSelectorInterface->callWithArgumentList(QDBus::NoBlock,
-                                                                     QStringLiteral("openConnection"), args);
+    QDBusMessage reply = connectionSelectorInterface->callWithArgumentList(
+                QDBus::NoBlock, QStringLiteral("openConnection"), args);
 
     if (reply.type() != QDBusMessage::ReplyMessage) {
         qWarning() << reply.errorMessage();
