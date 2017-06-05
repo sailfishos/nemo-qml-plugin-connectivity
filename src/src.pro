@@ -1,5 +1,5 @@
 TARGET = nemoconnectivity
-PLUGIN_IMPORT_PATH = org/nemomobile/connectivity
+PLUGIN_IMPORT_PATH = Nemo/Connectivity
 
 TEMPLATE = lib
 CONFIG += qt plugin hide_symbols
