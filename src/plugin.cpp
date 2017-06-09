@@ -39,20 +39,21 @@
 class Q_DECL_EXPORT NemoConnectivityPlugin : public QQmlExtensionPlugin
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.nemomobile.connectivity")
+    Q_PLUGIN_METADATA(IID "Nemo.Connectivity")
 
 public:
     virtual ~NemoConnectivityPlugin() { }
 
     void initializeEngine(QQmlEngine *engine, const char *uri)
     {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.connectivity"));
+        Q_UNUSED(engine);
+        Q_ASSERT(uri == QLatin1String("Nemo.Connectivity") || uri == QLatin1String("org.nemomobile.connectivity"));
     }
 
     void registerTypes(const char *uri)
     {
-        Q_ASSERT(uri == QLatin1String("org.nemomobile.connectivity"));
-        qmlRegisterType<ConnectionHelper>("org.nemomobile.connectivity", 1, 0, "ConnectionHelper");
+        Q_ASSERT(uri == QLatin1String("Nemo.Connectivity") || uri == QLatin1String("org.nemomobile.connectivity"));
+        qmlRegisterType<ConnectionHelper>(uri, 1, 0, "ConnectionHelper");
     }
 };
 

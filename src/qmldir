@@ -1,2 +1,2 @@
-module org.nemomobile.connectivity
+module Nemo.Connectivity
 plugin nemoconnectivity
