@@ -66,3 +66,9 @@ sed 's/Nemo.Connectivity/org.nemomobile.connectivity/' < src/plugin/qmldir > %{b
 %{_includedir}/nemo-connectivity/*.h
 %{_libdir}/libnemoconnectivity.so
 %{_libdir}/pkgconfig/nemoconnectivity.pc
+
+%post
+/sbin/ldconfig || :
+
+%postun
+/sbin/ldconfig || :
