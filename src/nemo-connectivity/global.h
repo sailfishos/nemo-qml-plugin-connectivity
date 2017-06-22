@@ -1,5 +1,6 @@
-/* Copyright (C) 2013 Jolla Ltd.
- * Contact: John Brooks <john.brooks@jolla.com>
+/*
+ * Copyright (C) 2017 Jolla Ltd
+ * Contact: Raine Makelainen <raine.makelainen@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -12,7 +13,7 @@
  *     notice, this list of conditions and the following disclaimer in
  *     the documentation and/or other materials provided with the
  *     distribution.
- *   * Neither the name of Jolla Ltd. nor the names of its contributors
+ *   * Neither the name of Nemo Mobile nor the names of its contributors
  *     may be used to endorse or promote products derived from this
  *     software without specific prior written permission.
  *
@@ -29,32 +30,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
+#ifndef NEMO_CONNECTIVITY_GLOBAL_H
+#define NEMO_CONNECTIVITY_GLOBAL_H
+
 #include <QtGlobal>
-#include <QtQml>
-#include <QQmlEngine>
-#include <QQmlExtensionPlugin>
 
-#include "connectionhelper_p.h"
+#if defined(NEMO_BUILD_CONNECTIVITY_LIBRARY)
+#define NEMO_CONNECTIVITY_EXPORT Q_DECL_EXPORT
+#else
+#define NEMO_CONNECTIVITY_EXPORT Q_DECL_IMPORT
+#endif
 
-class Q_DECL_EXPORT NemoConnectivityPlugin : public QQmlExtensionPlugin
-{
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "Nemo.Connectivity")
-
-public:
-    virtual ~NemoConnectivityPlugin() { }
-
-    void initializeEngine(QQmlEngine *engine, const char *uri)
-    {
-        Q_UNUSED(engine);
-        Q_ASSERT(uri == QLatin1String("Nemo.Connectivity") || uri == QLatin1String("org.nemomobile.connectivity"));
-    }
-
-    void registerTypes(const char *uri)
-    {
-        Q_ASSERT(uri == QLatin1String("Nemo.Connectivity") || uri == QLatin1String("org.nemomobile.connectivity"));
-        qmlRegisterType<ConnectionHelper>(uri, 1, 0, "ConnectionHelper");
-    }
-};
-
-#include "plugin.moc"
+#endif
