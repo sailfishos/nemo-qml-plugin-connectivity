@@ -348,8 +348,10 @@ MobileDataConnection::MobileDataConnection()
         d_ptr->networkService->setPath(d_ptr->servicePathForContext());
         emit defaultDataSimChanged();
     });
+    QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::presentSimCountChanged,
+            this, &MobileDataConnection::presentSimCountChanged);
     QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::availableModemsChanged,
-            this, &MobileDataConnection::slotCount);
+            this, &MobileDataConnection::slotCountChanged);
     QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::defaultDataModemChanged,
                      this, [=](QString modemPath) {
         qCDebug(CONNECTIVITY, "QOfonoExtModemManager::defaultDataModemChanged: %s use default: %d",
@@ -454,6 +456,12 @@ void MobileDataConnection::setDefaultDataSim(const QString &defaultDataSim)
 {
     Q_D(MobileDataConnection);
     d->modemManager->setDefaultDataSim(defaultDataSim);
+}
+
+int MobileDataConnection::presentSimCount() const
+{
+    Q_D(const MobileDataConnection);
+    return d->modemManager->presentSimCount();
 }
 
 int MobileDataConnection::slotCount() const
