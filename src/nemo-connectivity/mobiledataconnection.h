@@ -58,6 +58,7 @@ class NEMO_CONNECTIVITY_EXPORT MobileDataConnection : public QObject
     Q_PROPERTY(QString connectionName READ connectionName NOTIFY connectionNameChanged)
     Q_PROPERTY(QString modemPath READ modemPath WRITE setModemPath NOTIFY modemPathChanged)
     Q_PROPERTY(QString defaultDataSim READ defaultDataSim WRITE setDefaultDataSim NOTIFY defaultDataSimChanged)
+    Q_PROPERTY(int presentSimCount READ presentSimCount NOTIFY presentSimCountChanged)
 
     Q_PROPERTY(int slotCount READ slotCount NOTIFY slotCountChanged)
     Q_PROPERTY(int slotIndex READ slotIndex NOTIFY slotIndexChanged)
@@ -108,6 +109,8 @@ public:
     QString defaultDataSim() const;
     void setDefaultDataSim(const QString &defaultDataSim);
 
+    int presentSimCount() const;
+
     int slotCount() const;
     int slotIndex() const;
 
@@ -137,6 +140,8 @@ Q_SIGNALS:
     void connectionNameChanged();
     void modemPathChanged();
     void defaultDataSimChanged();
+
+    void presentSimCountChanged();
 
     void slotCountChanged();
     void slotIndexChanged();
