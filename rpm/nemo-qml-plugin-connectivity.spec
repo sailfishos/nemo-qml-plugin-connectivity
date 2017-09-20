@@ -11,7 +11,7 @@ BuildRequires:  pkgconfig(Qt5Network)
 BuildRequires:  pkgconfig(Qt5Gui)
 BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(Qt5DBus)
-BuildRequires:  pkgconfig(connman-qt5)
+BuildRequires:  pkgconfig(connman-qt5) >= 1.1.4
 BuildRequires:  pkgconfig(qofonoext)
 BuildRequires:  pkgconfig(qofono-qt5)
 
@@ -23,7 +23,7 @@ Summary:    Nemo Connectivity development files
 Group:      Development/Libraries
 Requires:   %{name} = %{version}-%{release}
 Requires:   pkgconfig(Qt5DBus)
-Requires:   pkgconfig(connman-qt5)
+Requires:   pkgconfig(connman-qt5) >= 1.1.4
 Requires:   pkgconfig(qofonoext)
 Requires:   pkgconfig(qofono-qt5)
 
