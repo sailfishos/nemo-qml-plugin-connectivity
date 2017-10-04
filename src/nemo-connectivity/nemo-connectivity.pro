@@ -9,8 +9,7 @@ CONFIG += \
         create_prl \
         no_install_prl
 
-QT -= gui
-QT += dbus
+QT = dbus
 
 INCLUDEPATH += ..
 
@@ -37,7 +36,7 @@ target.path = /usr/lib
 QMAKE_PKGCONFIG_NAME = nemoconnectivity
 QMAKE_PKGCONFIG_DESCRIPTION = Nemo library for Connectivity
 QMAKE_PKGCONFIG_LIBDIR = $$target.path
-QMAKE_PKGCONFIG_INCDIR = /usr/include
+QMAKE_PKGCONFIG_INCDIR = $$public_headers.path
 QMAKE_PKGCONFIG_DESTDIR = pkgconfig
 QMAKE_PKGCONFIG_VERSION = $$VERSION
 

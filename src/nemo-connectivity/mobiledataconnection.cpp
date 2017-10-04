@@ -336,6 +336,7 @@ MobileDataConnection::MobileDataConnection()
         qCDebug(CONNECTIVITY, "NetworkService::pathChanged %s modem: %s",
                 qPrintable(d_ptr->networkService->path()), qPrintable(d_ptr->modemManager->defaultDataModem()));
         d_ptr->updateValid();
+        emit identifierChanged();
     });
 
     QObject::connect(&d_ptr->networkRegistration, &QOfonoNetworkRegistration::statusChanged,
@@ -488,10 +489,10 @@ QString MobileDataConnection::state() const
     return d->networkService->state();
 }
 
-NetworkService *MobileDataConnection::service() const
+QString MobileDataConnection::identifier() const
 {
     Q_D(const MobileDataConnection);
-    return d->networkService;
+    return d->networkService->path();
 }
 
 QString MobileDataConnection::error() const

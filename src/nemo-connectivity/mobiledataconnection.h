@@ -66,7 +66,7 @@ class NEMO_CONNECTIVITY_EXPORT MobileDataConnection : public QObject
     Q_PROPERTY(QString subscriberIdentity READ subscriberIdentity NOTIFY subscriberIdentityChanged)
     Q_PROPERTY(QString state READ state NOTIFY stateChanged)
 
-    Q_PROPERTY(NetworkService *service READ service NOTIFY serviceChanged)
+    Q_PROPERTY(QString identifier READ identifier NOTIFY identifierChanged)
 
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
 
@@ -117,7 +117,7 @@ public:
     QString subscriberIdentity() const;
     QString state() const;
 
-    NetworkService *service() const;
+    QString identifier() const;
 
     QString error() const;
 
@@ -149,7 +149,7 @@ Q_SIGNALS:
     void subscriberIdentityChanged();
     void stateChanged();
 
-    void serviceChanged();
+    void identifierChanged();
 
     void errorChanged();
     void offlineModeChanged();
