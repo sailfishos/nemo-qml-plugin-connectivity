@@ -45,20 +45,22 @@ ConnectionHelper::ConnectionHelper(QObject *parent)
     , m_networkConfigReady(false)
     , m_delayedAttemptToConnect(false)
     , m_detectingNetworkConnection(false)
-    , connmanIsReady(false)
-    , netman(NetworkManagerFactory::createInstance())
-    , connectionSelectorInterface(nullptr)
+    , m_connmanIsAvailable(false)
+    , m_online(false)
+    , m_netman(NetworkManagerFactory::createInstance())
+    , m_connectionSelectorInterface(nullptr)
 
 {
     connect(&m_timeoutTimer, SIGNAL(timeout()), this, SLOT(emitFailureIfNeeded()));
     m_timeoutTimer.setSingleShot(true);
     m_timeoutTimer.setInterval(300000); // 5 minutes
 
-    connect(netman,SIGNAL(availabilityChanged(bool)),this,SLOT(connmanAvailableChanged(bool)));
-    connect(netman,SIGNAL(stateChanged(QString)),this,SLOT(networkStateChanged(QString)));
+    connect(m_netman, SIGNAL(availabilityChanged(bool)),this,SLOT(connmanAvailableChanged(bool)));
+    connect(m_netman, SIGNAL(stateChanged(QString)),this,SLOT(networkStateChanged(QString)));
 
-    connmanIsAvailable = QDBusConnection::systemBus().interface()->isServiceRegistered("net.connman");
+    m_connmanIsAvailable = QDBusConnection::systemBus().interface()->isServiceRegistered("net.connman");
 }
+
 
 ConnectionHelper::~ConnectionHelper()
 {
@@ -72,10 +74,8 @@ void ConnectionHelper::connmanAvailableChanged(bool available)
             m_delayedAttemptToConnect = false;
             attemptToConnectNetwork();
         }
-    } else {
-        connmanIsReady = false;
     }
-    connmanIsAvailable = available;
+    m_connmanIsAvailable = available;
 }
 
 /*
@@ -99,9 +99,12 @@ void ConnectionHelper::connmanAvailableChanged(bool available)
 */
 bool ConnectionHelper::haveNetworkConnectivity() const
 {
-    if (netman->defaultRoute() && netman->defaultRoute()->connected())
-        return true;
-    return false;
+    return m_connmanIsAvailable && m_netman->defaultRoute() && m_netman->defaultRoute()->connected();
+}
+
+bool ConnectionHelper::online() const
+{
+    return m_online;
 }
 
 /*
@@ -111,7 +114,7 @@ bool ConnectionHelper::haveNetworkConnectivity() const
     Emits networkConnectivityEstablished() if the request succeeds.
 
     Note that if no valid network configuration exists, the user will
-    be prompted to add a valid network configuration (eg, connect to wlan).
+    be prompted to add a valid network configuration (e.g. connect to wlan).
 
     If the user does add a valid configuration, the connection helper
     will emit
@@ -123,32 +126,46 @@ bool ConnectionHelper::haveNetworkConnectivity() const
 */
 void ConnectionHelper::attemptToConnectNetwork()
 {
-    if (!netman->defaultRoute()) {
+    _attemptToConnectNetwork(true);
+}
+
+/*
+    Same as attemptToConnectNetwork() function, but does not prompt
+    for user to add a valid network configuration.
+*/
+void ConnectionHelper::requestNetwork()
+{
+    _attemptToConnectNetwork(false);
+}
+
+void ConnectionHelper::_attemptToConnectNetwork(bool explicitAttempt)
+{
+    if (!m_connmanIsAvailable) {
+        m_delayedAttemptToConnect = true;
+        return;
+    }
+    if (!m_netman->defaultRoute()) {
         emitFailureIfNeeded();
         return;
     }
     // set up a timeout error emission trigger after 2 minutes, unless we manage to connect in the meantime.
     m_detectingNetworkConnection = true;
     m_timeoutTimer.start(300000);
-    if (netman->defaultRoute()->state() != "online") {
-        if (netman->defaultRoute()->state() == "ready") {
+
+    if (m_netman->defaultRoute()->state() != "online") {
+        if (m_netman->defaultRoute()->state() == "ready") {
             // we already have an open session, but something isn't quite right.  Ensure that the
             // connection is usable (not blocked by a Captive Portal).
             performRequest(/*true*/);
-        } else {
+        } else if (explicitAttempt) {
             // let's ask user for connection
             openConnectionDialog();
         }
     } else {
         // we are online and connman's online check has passed. Everything is ok
         m_detectingNetworkConnection = false;
-        emit networkConnectivityEstablished();
+        handleNetworkEstablished();
     }
-}
-
-void ConnectionHelper::closeNetworkSession()
-{
-    // TODO
 }
 
 void ConnectionHelper::performRequest()
@@ -187,7 +204,6 @@ void ConnectionHelper::handleCanaryRequestError(const QNetworkReply::NetworkErro
     reply->deleteLater();
     m_detectingNetworkConnection = false;
     QMetaObject::invokeMethod(this, "networkConnectivityUnavailable", Qt::QueuedConnection);
-    closeNetworkSession();
 }
 
 void ConnectionHelper::handleCanaryRequestFinished()
@@ -196,7 +212,7 @@ void ConnectionHelper::handleCanaryRequestFinished()
     if (!reply->property("isError").toBool()) {
         reply->deleteLater();
         m_detectingNetworkConnection = false;
-        emit networkConnectivityEstablished();
+        handleNetworkEstablished();
     }
 }
 
@@ -214,10 +230,10 @@ void ConnectionHelper::openConnectionDialog()
 {
     // open Connection Selector
 
-    if (!connectionSelectorInterface) {
+    if (!m_connectionSelectorInterface) {
         QDBusConnection connection = QDBusConnection::sessionBus();
 
-        connectionSelectorInterface = new QDBusInterface(
+        m_connectionSelectorInterface = new QDBusInterface(
                     QStringLiteral("com.jolla.lipstick.ConnectionSelector"),
                     QStringLiteral("/"),
                     QStringLiteral("com.jolla.lipstick.ConnectionSelectorIf"),
@@ -235,7 +251,7 @@ void ConnectionHelper::openConnectionDialog()
 
     QList<QVariant> args;
     args.append("wlan");
-    QDBusMessage reply = connectionSelectorInterface->callWithArgumentList(
+    QDBusMessage reply = m_connectionSelectorInterface->callWithArgumentList(
                 QDBus::NoBlock, QStringLiteral("openConnection"), args);
 
     if (reply.type() != QDBusMessage::ReplyMessage) {
@@ -248,7 +264,7 @@ void ConnectionHelper::connectionSelectorClosed(bool b)
 {
     if (!b) {
         //canceled
-        emit networkConnectivityUnavailable();
+        handleNetworkUnavailable();
     }
 }
 
@@ -257,15 +273,29 @@ void ConnectionHelper::serviceErrorChanged(const QString &errorString)
     if (errorString.isEmpty())
         return;
     m_detectingNetworkConnection = false;
-    emit networkConnectivityUnavailable();
+    handleNetworkUnavailable();
 }
 
 void ConnectionHelper::networkStateChanged(const QString &state)
 {
     if (state == "online") {
         m_detectingNetworkConnection = false;
-        emit networkConnectivityEstablished();
+        handleNetworkEstablished();
     } else if (state == "idle") {
-        emit networkConnectivityUnavailable();
+        handleNetworkUnavailable();
     }
+}
+
+void ConnectionHelper::handleNetworkEstablished()
+{
+    m_online = true;
+    emit networkConnectivityEstablished();
+    emit onlineChanged();
+}
+
+void ConnectionHelper::handleNetworkUnavailable()
+{
+    m_online = false;
+    emit networkConnectivityUnavailable();
+    emit onlineChanged();
 }

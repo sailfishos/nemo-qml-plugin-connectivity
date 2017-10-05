@@ -49,6 +49,7 @@ QT_END_NAMESPACE
 class ConnectionHelper : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(bool online READ online NOTIFY onlineChanged)
 
 public:
     ConnectionHelper(QObject *parent = 0);
@@ -56,11 +57,14 @@ public:
 
     Q_INVOKABLE bool haveNetworkConnectivity() const;
     Q_INVOKABLE void attemptToConnectNetwork();
-    Q_INVOKABLE void closeNetworkSession();
+    Q_INVOKABLE void requestNetwork();
+
+    bool online() const;
 
 Q_SIGNALS:
     void networkConnectivityEstablished();
     void networkConnectivityUnavailable();
+    void onlineChanged();
 
 private Q_SLOTS:
     void performRequest();
@@ -75,16 +79,20 @@ private Q_SLOTS:
     void openConnectionDialog();
 
 private:
+    void handleNetworkEstablished();
+    void handleNetworkUnavailable();
+    void _attemptToConnectNetwork(bool explicitAttempt);
+
+private:
     QTimer m_timeoutTimer;
     QNetworkAccessManager *m_networkAccessManager;
     bool m_networkConfigReady;
     bool m_delayedAttemptToConnect;
     bool m_detectingNetworkConnection;
-    bool connmanIsReady;
-    bool connmanIsAvailable;
+    bool m_connmanIsAvailable;
+    bool m_online;
 
-    NetworkManager *netman;
-    NetworkService *defaultService;
+    NetworkManager *m_netman;
 
-    QDBusInterface *connectionSelectorInterface;
+    QDBusInterface *m_connectionSelectorInterface;
 };
