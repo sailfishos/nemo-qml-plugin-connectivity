@@ -272,6 +272,15 @@ MobileDataConnection::MobileDataConnection()
     QObject::connect(&d_ptr->simManager, &QOfonoSimManager::modemPathChanged,
             this, [=](QString modemPath) {
         d_ptr->networkRegistration.setModemPath(modemPath);
+
+        if (d_ptr->connectionManager && modemPath != d_ptr->connectionManager->modemPath()) {
+            QObject::disconnect(d_ptr->connectionManager.data(), 0, this, 0);
+            d_ptr->connectionManager.reset();
+            delete d_ptr->connectionContext;
+            d_ptr->connectionContext = nullptr;
+            d_ptr->updateDataContext();
+        }
+
         emit modemPathChanged();
         emit slotIndexChanged();
         qCDebug(CONNECTIVITY, "QOfonoSimManager::modemPathChanged %s index: %d", qPrintable(modemPath), slotIndex());
