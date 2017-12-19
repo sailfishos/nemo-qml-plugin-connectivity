@@ -29,7 +29,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "connectionhelper_p.h"
+#include "connectionhelper.h"
 
 #include <QTimer>
 #include <QUrl>
@@ -38,6 +38,8 @@
 #include <QtDBus/QDBusConnection>
 
 #include <connman-qt5/networkmanager.h>
+
+namespace Nemo {
 
 ConnectionHelper::ConnectionHelper(QObject *parent)
     : QObject(parent)
@@ -298,4 +300,6 @@ void ConnectionHelper::handleNetworkUnavailable()
     m_online = false;
     emit networkConnectivityUnavailable();
     emit onlineChanged();
+}
+
 }

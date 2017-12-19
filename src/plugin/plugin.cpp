@@ -35,7 +35,7 @@
 #include <QQmlExtensionPlugin>
 
 #include "mobiledataconnection.h"
-#include "connectionhelper_p.h"
+#include "connectionhelper.h"
 
 class Q_DECL_EXPORT NemoConnectivityPlugin : public QQmlExtensionPlugin
 {
@@ -54,7 +54,7 @@ public:
     void registerTypes(const char *uri)
     {
         Q_ASSERT(uri == QLatin1String("Nemo.Connectivity") || uri == QLatin1String("org.nemomobile.connectivity"));
-        qmlRegisterType<ConnectionHelper>(uri, 1, 0, "ConnectionHelper");
+        qmlRegisterType<Nemo::ConnectionHelper>(uri, 1, 0, "ConnectionHelper");
         qmlRegisterType<Nemo::MobileDataConnection>(uri, 1, 0, "MobileDataConnection");
     }
 };
