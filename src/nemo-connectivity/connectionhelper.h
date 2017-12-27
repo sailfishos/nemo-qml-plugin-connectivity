@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 Jolla Ltd.
+/* Copyright (C) 2013-2017 Jolla Ltd.
  * Contact: Chris Adams <chris.adams@jolla.com>
  *
  * You may use this file under the terms of the BSD license as follows:
@@ -29,12 +29,17 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
+#ifndef NEMO_CONNECTION_HELPER_H
+#define NEMO_CONNECTION_HELPER_H
+
 #include <QObject>
 
 #include <QNetworkConfigurationManager>
 #include <QNetworkSession>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+
+#include <nemo-connectivity/global.h>
 
 #include <connman-qt5/networkmanager.h>
 #include <connman-qt5/networktechnology.h>
@@ -46,7 +51,9 @@ QT_BEGIN_NAMESPACE
 class QDBusInterface;
 QT_END_NAMESPACE
 
-class ConnectionHelper : public QObject
+namespace Nemo {
+
+class NEMO_CONNECTIVITY_EXPORT ConnectionHelper : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool online READ online NOTIFY onlineChanged)
@@ -96,3 +103,7 @@ private:
 
     QDBusInterface *m_connectionSelectorInterface;
 };
+
+}
+
+#endif

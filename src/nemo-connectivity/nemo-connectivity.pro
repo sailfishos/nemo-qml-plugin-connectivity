@@ -9,7 +9,7 @@ CONFIG += \
         create_prl \
         no_install_prl
 
-QT = dbus
+QT = dbus network
 
 INCLUDEPATH += ..
 
@@ -19,9 +19,13 @@ PKGCONFIG += connman-qt5 \
     qofonoext \
     qofono-qt5
 
-SOURCES += mobiledataconnection.cpp
+SOURCES += \
+        connectionhelper.cpp \
+        mobiledataconnection.cpp
+
 
 PUBLIC_HEADERS += \
+        connectionhelper.h \
         mobiledataconnection.h \
         global.h
 
