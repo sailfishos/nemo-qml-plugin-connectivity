@@ -49,6 +49,7 @@ ConnectionHelper::ConnectionHelper(QObject *parent)
     , m_detectingNetworkConnection(false)
     , m_connmanIsAvailable(false)
     , m_online(false)
+    , m_connectionSelectorOpened(false)
     , m_netman(NetworkManagerFactory::createInstance())
     , m_connectionSelectorInterface(nullptr)
 
@@ -248,7 +249,7 @@ void ConnectionHelper::openConnectionDialog()
                     QStringLiteral("com.jolla.lipstick.ConnectionSelectorIf"),
                     QStringLiteral("connectionSelectorClosed"),
                     this,
-                    SLOT(connectionSelectorClosed(bool)));
+                    SLOT(handleConnectionSelectorClosed(bool)));
     }
 
     QList<QVariant> args;
@@ -259,15 +260,20 @@ void ConnectionHelper::openConnectionDialog()
     if (reply.type() != QDBusMessage::ReplyMessage) {
         qWarning() << reply.errorMessage();
         serviceErrorChanged(reply.errorMessage());
+    } else {
+        m_connectionSelectorOpened = true;
     }
 }
 
-void ConnectionHelper::connectionSelectorClosed(bool b)
+void ConnectionHelper::handleConnectionSelectorClosed(bool b)
 {
     if (!b) {
         //canceled
         handleNetworkUnavailable();
     }
+
+    m_connectionSelectorOpened = false;
+    emit connectionSelectorClosed();
 }
 
 void ConnectionHelper::serviceErrorChanged(const QString &errorString)
@@ -300,6 +306,11 @@ void ConnectionHelper::handleNetworkUnavailable()
     m_online = false;
     emit networkConnectivityUnavailable();
     emit onlineChanged();
+}
+
+bool ConnectionHelper::connectionSelectorOpened() const
+{
+    return m_connectionSelectorOpened;
 }
 
 }
