@@ -57,6 +57,7 @@ class NEMO_CONNECTIVITY_EXPORT ConnectionHelper : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool online READ online NOTIFY onlineChanged)
+    Q_PROPERTY(bool connectionSelectorOpened READ connectionSelectorOpened)
 
 public:
     ConnectionHelper(QObject *parent = 0);
@@ -67,11 +68,13 @@ public:
     Q_INVOKABLE void requestNetwork();
 
     bool online() const;
+    bool connectionSelectorOpened() const;
 
 Q_SIGNALS:
     void networkConnectivityEstablished();
     void networkConnectivityUnavailable();
     void onlineChanged();
+    void connectionSelectorClosed();
 
 private Q_SLOTS:
     void performRequest();
@@ -79,7 +82,7 @@ private Q_SLOTS:
     void handleCanaryRequestFinished();
     void emitFailureIfNeeded(); // due to timeout.
 
-    void connectionSelectorClosed(bool);
+    void handleConnectionSelectorClosed(bool);
     void connmanAvailableChanged(bool);
     void serviceErrorChanged(const QString &);
     void networkStateChanged(const QString &);
@@ -98,6 +101,7 @@ private:
     bool m_detectingNetworkConnection;
     bool m_connmanIsAvailable;
     bool m_online;
+    bool m_connectionSelectorOpened;
 
     NetworkManager *m_netman;
 
