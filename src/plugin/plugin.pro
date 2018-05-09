@@ -10,7 +10,7 @@ INSTALLS += target
 
 INCLUDEPATH += $$PWD/.. $$PWD/../nemo-connectivity
 
-qmldir.files += $$_PRO_FILE_PWD_/qmldir
+qmldir.files += qmldir
 qmldir.path +=  $$target.path
 INSTALLS += qmldir
 
