@@ -10,8 +10,11 @@ INSTALLS += target
 
 INCLUDEPATH += $$PWD/.. $$PWD/../nemo-connectivity
 
-qmldir.files += $$_PRO_FILE_PWD_/qmldir
+qmldir.files += qmldir plugins.qmltypes
 qmldir.path +=  $$target.path
 INSTALLS += qmldir
+
+qmltypes.commands = qmlplugindump -nonrelocatable Nemo.Connectivity 1.0 > $$PWD/plugins.qmltypes
+QMAKE_EXTRA_TARGETS += qmltypes
 
 SOURCES += plugin.cpp

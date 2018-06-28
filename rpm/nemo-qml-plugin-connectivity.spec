@@ -49,6 +49,7 @@ sed 's/Nemo.Connectivity/org.nemomobile.connectivity/' < src/plugin/qmldir > %{b
 %defattr(-,root,root,-)
 %dir %{_libdir}/qt5/qml/Nemo/Connectivity
 %{_libdir}/qt5/qml/Nemo/Connectivity/libnemoconnectivity.so
+%{_libdir}/qt5/qml/Nemo/Connectivity/plugins.qmltypes
 %{_libdir}/qt5/qml/Nemo/Connectivity/qmldir
 
 # org.nemomobile.connectivity legacy import
