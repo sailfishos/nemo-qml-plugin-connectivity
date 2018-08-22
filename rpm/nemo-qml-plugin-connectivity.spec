@@ -6,11 +6,12 @@ Group:      System/Libraries
 License:    BSD
 URL:        https://git.merproject.org/mer-core/nemo-qml-plugin-connectivity
 Source0:    %{name}-%{version}.tar.bz2
+Requires:   connman-qt5 >= 1.2.10
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Network)
 BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(Qt5DBus)
-BuildRequires:  pkgconfig(connman-qt5) >= 1.1.4
+BuildRequires:  pkgconfig(connman-qt5) >= 1.2.10
 BuildRequires:  pkgconfig(qofonoext)
 BuildRequires:  pkgconfig(qofono-qt5)
 
@@ -22,7 +23,7 @@ Summary:    Nemo Connectivity development files
 Group:      Development/Libraries
 Requires:   %{name} = %{version}-%{release}
 Requires:   pkgconfig(Qt5DBus)
-Requires:   pkgconfig(connman-qt5) >= 1.1.4
+Requires:   pkgconfig(connman-qt5) >= 1.2.10
 Requires:   pkgconfig(qofonoext)
 Requires:   pkgconfig(qofono-qt5)
 
