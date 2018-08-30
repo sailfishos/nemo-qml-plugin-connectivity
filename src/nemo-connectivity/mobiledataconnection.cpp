@@ -140,10 +140,17 @@ void MobileDataConnectionPrivate::updateSubscriberIdentity()
 
 QString MobileDataConnectionPrivate::servicePathForContext()
 {
-    QString imsi = subscriberIdentity();
-    QStringList cellularServices = networkManager.servicesList(QLatin1String("cellular"));
+    if (inetContextPath.isEmpty()) {
+        return QString();
+    }
 
-    if (inetContextPath.isEmpty() || imsi.isEmpty() || cellularServices.isEmpty()) {
+    QString imsi = subscriberIdentity();
+    if (imsi.isEmpty()) {
+        return QString();
+    }
+
+    QStringList cellularServices = networkManager.servicesList(QLatin1String("cellular"));
+    if (cellularServices.isEmpty()) {
         return QString();
     }
 
@@ -298,7 +305,7 @@ MobileDataConnection::MobileDataConnection()
         d_ptr->networkService->setPath(d_ptr->servicePathForContext());
     });
 
-    QObject::connect(&d_ptr->networkManager, &NetworkManager::servicesListChanged, this, [=]() {
+    QObject::connect(&d_ptr->networkManager, &NetworkManager::cellularServicesChanged, this, [=]() {
         d_ptr->networkService->setPath(d_ptr->servicePathForContext());
     });
 
