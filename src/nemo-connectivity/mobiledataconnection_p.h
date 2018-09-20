@@ -62,6 +62,7 @@ public:
 
     QString subscriberIdentity() const;
     void updateSubscriberIdentity();
+    void updateServiceProviderName();
 
     QString servicePathForContext();
 
@@ -84,6 +85,7 @@ public:
     QString inetContextPath;
     QString connectionName;
     QString modemPath;
+    QString serviceProviderName;
 
     MobileDataConnection *q;
 

@@ -134,7 +134,17 @@ void MobileDataConnectionPrivate::updateSubscriberIdentity()
     if (simMgrValid != simManagerValid) {
         simManagerValid = simMgrValid;
         emit q->subscriberIdentityChanged();
+        updateServiceProviderName();
         networkService->setPath(servicePathForContext());
+    }
+}
+
+void MobileDataConnectionPrivate::updateServiceProviderName()
+{
+    QString newName = isSimManagerValid() ? simManager.serviceProviderName() : QString();
+    if (serviceProviderName != newName) {
+        serviceProviderName = newName;
+        emit q->serviceProviderNameChanged();
     }
 }
 
@@ -299,6 +309,10 @@ MobileDataConnection::MobileDataConnection()
 
     QObject::connect(&d_ptr->simManager, &QOfonoSimManager::presenceChanged, this, [=]() {
         d_ptr->updateSubscriberIdentity();
+    });
+
+    QObject::connect(&d_ptr->simManager, &QOfonoSimManager::serviceProviderNameChanged, this, [=]() {
+        d_ptr->updateServiceProviderName();
     });
 
     QObject::connect(&d_ptr->networkManager, &NetworkManager::availabilityChanged, this, [=]() {
@@ -497,6 +511,12 @@ QString MobileDataConnection::subscriberIdentity() const
 {
     Q_D(const MobileDataConnection);
     return d->subscriberIdentity();
+}
+
+QString MobileDataConnection::serviceProviderName() const
+{
+    Q_D(const MobileDataConnection);
+    return d->serviceProviderName;
 }
 
 QString MobileDataConnection::state() const
