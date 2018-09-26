@@ -64,6 +64,7 @@ class NEMO_CONNECTIVITY_EXPORT MobileDataConnection : public QObject
     Q_PROPERTY(int slotIndex READ slotIndex NOTIFY slotIndexChanged)
 
     Q_PROPERTY(QString subscriberIdentity READ subscriberIdentity NOTIFY subscriberIdentityChanged)
+    Q_PROPERTY(QString serviceProviderName READ serviceProviderName NOTIFY serviceProviderNameChanged)
     Q_PROPERTY(QString state READ state NOTIFY stateChanged)
 
     Q_PROPERTY(QString identifier READ identifier NOTIFY identifierChanged)
@@ -115,6 +116,7 @@ public:
     int slotIndex() const;
 
     QString subscriberIdentity() const;
+    QString serviceProviderName() const;
     QString state() const;
 
     QString identifier() const;
@@ -147,6 +149,7 @@ Q_SIGNALS:
     void slotIndexChanged();
 
     void subscriberIdentityChanged();
+    void serviceProviderNameChanged();
     void stateChanged();
 
     void identifierChanged();

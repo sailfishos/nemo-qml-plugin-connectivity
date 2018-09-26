@@ -59,9 +59,9 @@ public:
     bool isSimManagerValid() const;
 
     void updateStatus();
-
-    QString subscriberIdentity() const;
+    void updateNetworkServicePath();
     void updateSubscriberIdentity();
+    void updateServiceProviderName();
 
     QString servicePathForContext();
 
@@ -84,6 +84,8 @@ public:
     QString inetContextPath;
     QString connectionName;
     QString modemPath;
+    QString subscriberIdentity;
+    QString serviceProviderName;
 
     MobileDataConnection *q;
 

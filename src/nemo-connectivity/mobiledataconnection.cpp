@@ -123,18 +123,32 @@ void MobileDataConnectionPrivate::updateStatus()
             qPrintable(state), connectingService, qPrintable(q->objectName()));
 }
 
-QString MobileDataConnectionPrivate::subscriberIdentity() const
-{
-    return isSimManagerValid() ? simManager.subscriberIdentity() : QString();
-}
-
-void MobileDataConnectionPrivate::updateSubscriberIdentity()
+void MobileDataConnectionPrivate::updateNetworkServicePath()
 {
     bool simMgrValid = isSimManagerValid();
     if (simMgrValid != simManagerValid) {
         simManagerValid = simMgrValid;
-        emit q->subscriberIdentityChanged();
+        updateSubscriberIdentity();
+        updateServiceProviderName();
         networkService->setPath(servicePathForContext());
+    }
+}
+
+void MobileDataConnectionPrivate::updateSubscriberIdentity()
+{
+    QString newSubscriberIdentity = isSimManagerValid() ? simManager.subscriberIdentity() : QString();
+    if (subscriberIdentity != newSubscriberIdentity) {
+        subscriberIdentity = newSubscriberIdentity;
+        emit q->subscriberIdentityChanged();
+    }
+}
+
+void MobileDataConnectionPrivate::updateServiceProviderName()
+{
+    QString newName = isSimManagerValid() ? simManager.serviceProviderName() : QString();
+    if (serviceProviderName != newName) {
+        serviceProviderName = newName;
+        emit q->serviceProviderNameChanged();
     }
 }
 
@@ -144,7 +158,7 @@ QString MobileDataConnectionPrivate::servicePathForContext()
         return QString();
     }
 
-    QString imsi = subscriberIdentity();
+    QString imsi = subscriberIdentity;
     if (imsi.isEmpty()) {
         return QString();
     }
@@ -294,11 +308,16 @@ MobileDataConnection::MobileDataConnection()
     });
 
     QObject::connect(&d_ptr->simManager, &QOfonoSimManager::validChanged, this, [=]() {
+        d_ptr->updateNetworkServicePath();
+    });
+    QObject::connect(&d_ptr->simManager, &QOfonoSimManager::presenceChanged, this, [=]() {
+        d_ptr->updateNetworkServicePath();
+    });
+    QObject::connect(&d_ptr->simManager, &QOfonoSimManager::subscriberIdentityChanged, this, [=]() {
         d_ptr->updateSubscriberIdentity();
     });
-
-    QObject::connect(&d_ptr->simManager, &QOfonoSimManager::presenceChanged, this, [=]() {
-        d_ptr->updateSubscriberIdentity();
+    QObject::connect(&d_ptr->simManager, &QOfonoSimManager::serviceProviderNameChanged, this, [=]() {
+        d_ptr->updateServiceProviderName();
     });
 
     QObject::connect(&d_ptr->networkManager, &NetworkManager::availabilityChanged, this, [=]() {
@@ -496,7 +515,13 @@ int MobileDataConnection::slotIndex() const
 QString MobileDataConnection::subscriberIdentity() const
 {
     Q_D(const MobileDataConnection);
-    return d->subscriberIdentity();
+    return d->subscriberIdentity;
+}
+
+QString MobileDataConnection::serviceProviderName() const
+{
+    Q_D(const MobileDataConnection);
+    return d->serviceProviderName;
 }
 
 QString MobileDataConnection::state() const
