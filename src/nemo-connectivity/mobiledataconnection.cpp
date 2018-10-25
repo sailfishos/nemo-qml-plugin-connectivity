@@ -80,11 +80,6 @@ void MobileDataConnectionPrivate::updateValid()
             networkService->available(), qPrintable(q->objectName()));
     if (valid != v) {
         valid = v;
-
-        if (valid) {
-            requestConnect();
-        }
-
         emit q->validChanged();
     }
 }
@@ -99,8 +94,7 @@ void MobileDataConnectionPrivate::updateStatus()
     MobileDataConnection::Status oldStatus = status;
     QString state = networkService->state();
 
-    bool connecting = (oldStatus == MobileDataConnection::Unknown || oldStatus == MobileDataConnection::Disconnected) &&
-            (state == QLatin1String("association") || state == QLatin1String("configuration"));
+    bool connecting = (state == QLatin1String("association") || state == QLatin1String("configuration"));
     if (q->connected()) {
         connectingService = false;
     }
@@ -275,14 +269,10 @@ bool MobileDataConnectionPrivate::hasDataContext()
 void MobileDataConnectionPrivate::requestConnect()
 {
     if (connectingService && valid && !q->modemPath().isEmpty() && networkService->available()) {
-        if (!networkService->autoConnect()) {
-            networkService->setAutoConnect(true);
-        } else {
-            qCDebug(CONNECTIVITY,
-                    "\n\n\n\n\n================================= MobileDataConnection requestConnect: %s %s\n\n\n\n\n",
-                    qPrintable(q->modemPath()), qPrintable(q->objectName()));
-            networkService->requestConnect();
-        }
+        qCDebug(CONNECTIVITY,
+                "\n\n\n\n\n================================= MobileDataConnection requestConnect: %s %s\n\n\n\n\n",
+                qPrintable(q->modemPath()), qPrintable(q->objectName()));
+        networkService->requestConnect();
         updateStatus();
     }
 }
@@ -348,13 +338,11 @@ MobileDataConnection::MobileDataConnection()
     });
 
     QObject::connect(d_ptr->networkService, &NetworkService::availableChanged, this, [=]() {
-        bool available = d_ptr->networkService->available();
         qCDebug(CONNECTIVITY, "####################### MobileDataConnection::availableChanged state: %s %s available: %d %s",
                 qPrintable(d_ptr->networkService->state()), qPrintable(modemPath()),
                 d_ptr->networkService->available(), qPrintable(objectName()));
-        if (available) {
-            d_ptr->requestConnect();
-        }
+        d_ptr->updateStatus();
+        emit stateChanged();
     });
 
     QObject::connect(d_ptr->networkService, &NetworkService::connectedChanged, this, &MobileDataConnection::connectedChanged);
@@ -363,7 +351,6 @@ MobileDataConnection::MobileDataConnection()
                 d_ptr->networkService->autoConnect(), d_ptr->connectingService,
                 d_ptr->valid, qPrintable(d_ptr->modemManager->defaultDataModem()),
                 qPrintable(state()), d_ptr->networkService->available());
-        d_ptr->requestConnect();
         emit autoConnectChanged();
     });
 
@@ -572,7 +559,7 @@ void MobileDataConnection::connect()
 void MobileDataConnection::disconnect()
 {
     Q_D(MobileDataConnection);
-    d->networkService->setAutoConnect(false);
+    d->networkService->requestDisconnect();
     d->connectingService = false;
     d->updateStatus();
 }
