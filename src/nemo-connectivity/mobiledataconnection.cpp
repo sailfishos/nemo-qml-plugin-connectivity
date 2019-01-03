@@ -67,9 +67,10 @@ MobileDataConnectionPrivate::~MobileDataConnectionPrivate()
 
 bool MobileDataConnectionPrivate::isValid() const
 {
-    return networkService && !networkService->path().isEmpty()
+    return networkService && networkService->isValid() && !networkService->path().isEmpty()
             && connectionManager && connectionManager->isValid()
-            && connectionContext && connectionContext->isValid();
+            && connectionContext && connectionContext->isValid()
+            && networkService->available();
 }
 
 void MobileDataConnectionPrivate::updateValid()
@@ -337,10 +338,16 @@ MobileDataConnection::MobileDataConnection()
         emit stateChanged();
     });
 
+    QObject::connect(d_ptr->networkService, &NetworkService::validChanged, this, [=]() {
+        qCDebug(CONNECTIVITY, "NetworkService::validChanged mobile data valid old: %d new %d", d_ptr->valid, d_ptr->isValid());
+        d_ptr->updateValid();
+    });
+
     QObject::connect(d_ptr->networkService, &NetworkService::availableChanged, this, [=]() {
         qCDebug(CONNECTIVITY, "####################### MobileDataConnection::availableChanged state: %s %s available: %d %s",
                 qPrintable(d_ptr->networkService->state()), qPrintable(modemPath()),
                 d_ptr->networkService->available(), qPrintable(objectName()));
+        d_ptr->updateValid();
         d_ptr->updateStatus();
         emit stateChanged();
     });
