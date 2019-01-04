@@ -368,6 +368,8 @@ MobileDataConnection::MobileDataConnection()
         emit identifierChanged();
     });
 
+    QObject::connect(d_ptr->networkService, &NetworkService::savedChanged, this, &MobileDataConnection::savedChanged);
+
     QObject::connect(&d_ptr->networkRegistration, &QOfonoNetworkRegistration::statusChanged,
             this, &MobileDataConnection::roamingChanged);
 
@@ -552,6 +554,12 @@ bool MobileDataConnection::roaming() const
 {
     Q_D(const MobileDataConnection);
     return d->networkRegistration.status() == QLatin1String("roaming");
+}
+
+bool MobileDataConnection::saved() const
+{
+    Q_D(const MobileDataConnection);
+    return d->networkService->saved();
 }
 
 void MobileDataConnection::connect()
