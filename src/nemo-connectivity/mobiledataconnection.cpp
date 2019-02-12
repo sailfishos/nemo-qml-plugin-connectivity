@@ -39,6 +39,8 @@ namespace Nemo {
 MobileDataConnectionPrivate::MobileDataConnectionPrivate(MobileDataConnection *q)
     : valid(false)
     , simManagerValid(false)
+    , autoConnect(false)
+    , autoConnectPending(false)
     , status(MobileDataConnection::Unknown)
     , connectingService(false)
     , useDefaultModem(false)
@@ -341,6 +343,10 @@ MobileDataConnection::MobileDataConnection()
     QObject::connect(d_ptr->networkService, &NetworkService::validChanged, this, [=]() {
         qCDebug(CONNECTIVITY, "NetworkService::validChanged mobile data valid old: %d new %d", d_ptr->valid, d_ptr->isValid());
         d_ptr->updateValid();
+        if (d_ptr->autoConnectPending) {
+            d_ptr->networkService->setAutoConnect(d_ptr->autoConnect);
+            d_ptr->autoConnectPending = false;
+        }
     });
 
     QObject::connect(d_ptr->networkService, &NetworkService::availableChanged, this, [=]() {
@@ -358,7 +364,9 @@ MobileDataConnection::MobileDataConnection()
                 d_ptr->networkService->autoConnect(), d_ptr->connectingService,
                 d_ptr->valid, qPrintable(d_ptr->modemManager->defaultDataModem()),
                 qPrintable(state()), d_ptr->networkService->available());
-        emit autoConnectChanged();
+        if (!d_ptr->autoConnectPending) {
+            emit autoConnectChanged();
+        }
     });
 
     QObject::connect(d_ptr->networkService, &NetworkService::pathChanged, this, [=]() {
@@ -410,13 +418,20 @@ bool MobileDataConnection::isValid() const
 bool MobileDataConnection::autoConnect() const
 {
     Q_D(const MobileDataConnection);
+    if (d->autoConnectPending)
+        return d->autoConnect;
     return d->networkService->autoConnect();
 }
 
 void MobileDataConnection::setAutoConnect(bool autoConnect)
 {
     Q_D(MobileDataConnection);
-    d->networkService->setAutoConnect(autoConnect);
+    if (d->networkService->isValid()) {
+        d->networkService->setAutoConnect(autoConnect);
+    } else {
+        d->autoConnect = autoConnect;
+        d->autoConnectPending = true;
+    }
 }
 
 bool MobileDataConnection::connected() const
