@@ -76,6 +76,8 @@ class NEMO_CONNECTIVITY_EXPORT MobileDataConnection : public QObject
     Q_PROPERTY(bool roamingAllowed READ roamingAllowed NOTIFY roamingAllowedChanged)
     Q_PROPERTY(bool roaming READ roaming NOTIFY roamingChanged)
 
+    Q_PROPERTY(bool saved READ saved NOTIFY savedChanged)
+
 public:
     MobileDataConnection();
     ~MobileDataConnection();
@@ -128,6 +130,8 @@ public:
     bool roamingAllowed() const;
     bool roaming() const;
 
+    bool saved() const;
+
     Q_INVOKABLE void connect();
     Q_INVOKABLE void disconnect();
 
@@ -159,6 +163,8 @@ Q_SIGNALS:
 
     void roamingAllowedChanged();
     void roamingChanged();
+
+    void savedChanged();
 
     void reportError(const QString &errorString);
 
