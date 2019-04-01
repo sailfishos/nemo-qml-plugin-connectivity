@@ -77,7 +77,7 @@ public:
     bool simManagerValid;
 
     bool autoConnect;
-    bool autoConnectSet;
+    bool autoConnectPending;
 
     MobileDataConnection::Status status;
     bool connectingService;
