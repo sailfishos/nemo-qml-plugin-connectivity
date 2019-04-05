@@ -48,12 +48,12 @@ public:
     void initializeEngine(QQmlEngine *engine, const char *uri)
     {
         Q_UNUSED(engine);
-        Q_ASSERT(uri == QLatin1String("Nemo.Connectivity") || uri == QLatin1String("org.nemomobile.connectivity"));
+        Q_ASSERT(uri == QLatin1String("Nemo.Connectivity"));
     }
 
     void registerTypes(const char *uri)
     {
-        Q_ASSERT(uri == QLatin1String("Nemo.Connectivity") || uri == QLatin1String("org.nemomobile.connectivity"));
+        Q_ASSERT(uri == QLatin1String("Nemo.Connectivity"));
         qmlRegisterType<Nemo::ConnectionHelper>(uri, 1, 0, "ConnectionHelper");
         qmlRegisterType<Nemo::MobileDataConnection>(uri, 1, 0, "MobileDataConnection");
     }
