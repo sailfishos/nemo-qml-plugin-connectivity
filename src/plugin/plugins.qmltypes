@@ -56,6 +56,7 @@ Module {
         Property { name: "offlineMode"; type: "bool"; isReadonly: true }
         Property { name: "roamingAllowed"; type: "bool"; isReadonly: true }
         Property { name: "roaming"; type: "bool"; isReadonly: true }
+        Property { name: "saved"; type: "bool"; isReadonly: true }
         Signal {
             name: "reportError"
             Parameter { name: "errorString"; type: "string" }
