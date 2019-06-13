@@ -49,7 +49,6 @@ ConnectionHelper::ConnectionHelper(QObject *parent)
     , m_detectingNetworkConnection(false)
     , m_connmanIsAvailable(false)
     , m_online(false)
-    , m_connectionSelectorOpened(false)
     , m_netman(NetworkManagerFactory::createInstance())
     , m_connectionSelectorInterface(nullptr)
 
@@ -58,8 +57,8 @@ ConnectionHelper::ConnectionHelper(QObject *parent)
     m_timeoutTimer.setSingleShot(true);
     m_timeoutTimer.setInterval(300000); // 5 minutes
 
-    connect(m_netman, SIGNAL(availabilityChanged(bool)),this,SLOT(connmanAvailableChanged(bool)));
-    connect(m_netman, SIGNAL(stateChanged(QString)),this,SLOT(networkStateChanged(QString)));
+    connect(m_netman, SIGNAL(availabilityChanged(bool)),this, SLOT(connmanAvailableChanged(bool)));
+    connect(m_netman, SIGNAL(stateChanged(QString)), this, SLOT(networkStateChanged(QString)));
 
     m_connmanIsAvailable = QDBusConnection::systemBus().interface()->isServiceRegistered("net.connman");
 }
@@ -79,30 +78,6 @@ void ConnectionHelper::connmanAvailableChanged(bool available)
         }
     }
     m_connmanIsAvailable = available;
-}
-
-/*
-    Checks whether the default network configuration is currently
-    connected.  Note that the default configuration may be
-    connected even if the ConnectionHelper has not yet created
-    a session with that configuration.
-
-    Note that this function will return true if the network is
-    connected or available, even if the network is not immediately
-    usable!  For example, an available network might have a captive
-    portal set for it (which requires user intervention via web
-    browser before the connection can be used for other data).
-
-    As such, clients are advised to use attemptToConnectNetwork()
-    if they need to know whether the network is usable.
-
-    This function is most useful for clients who want to simply
-    disable some part of their functionality if the network is not
-    currently connected.
-*/
-bool ConnectionHelper::haveNetworkConnectivity() const
-{
-    return m_connmanIsAvailable && m_netman->defaultRoute() && m_netman->defaultRoute()->connected();
 }
 
 bool ConnectionHelper::online() const
@@ -260,8 +235,6 @@ void ConnectionHelper::openConnectionDialog()
     if (reply.type() != QDBusMessage::ReplyMessage) {
         qWarning() << reply.errorMessage();
         serviceErrorChanged(reply.errorMessage());
-    } else {
-        m_connectionSelectorOpened = true;
     }
 }
 
@@ -271,9 +244,6 @@ void ConnectionHelper::handleConnectionSelectorClosed(bool b)
         //canceled
         handleNetworkUnavailable();
     }
-
-    m_connectionSelectorOpened = false;
-    emit connectionSelectorClosed();
 }
 
 void ConnectionHelper::serviceErrorChanged(const QString &errorString)
@@ -306,11 +276,6 @@ void ConnectionHelper::handleNetworkUnavailable()
     m_online = false;
     emit networkConnectivityUnavailable();
     emit onlineChanged();
-}
-
-bool ConnectionHelper::connectionSelectorOpened() const
-{
-    return m_connectionSelectorOpened;
 }
 
 }
