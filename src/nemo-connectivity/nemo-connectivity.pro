@@ -33,9 +33,9 @@ HEADERS += $$PUBLIC_HEADERS \
     mobiledataconnection_p.h \
 
 public_headers.files = $$PUBLIC_HEADERS
-public_headers.path = /usr/include/nemo-connectivity
+public_headers.path = $$PREFIX/include/nemo-connectivity
 
-target.path = /usr/lib
+target.path = $$[QT_INSTALL_LIBS]
 
 QMAKE_PKGCONFIG_NAME = nemoconnectivity
 QMAKE_PKGCONFIG_DESCRIPTION = Nemo library for Connectivity

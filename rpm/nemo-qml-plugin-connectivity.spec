@@ -1,10 +1,9 @@
 Name:       nemo-qml-plugin-connectivity
-Summary:    Connectivity plugin for Nemo Mobile
+Summary:    Connectivity plugin for Sailfish OS
 Version:    0.1
 Release:    1
-Group:      System/Libraries
 License:    BSD
-URL:        https://git.merproject.org/mer-core/nemo-qml-plugin-connectivity
+URL:        https://git.sailfishos.org/mer-core/nemo-qml-plugin-connectivity
 Source0:    %{name}-%{version}.tar.bz2
 Requires:   connman-qt5 >= 1.2.10
 BuildRequires:  pkgconfig(Qt5Core)
@@ -20,7 +19,6 @@ BuildRequires:  pkgconfig(qofono-qt5)
 
 %package devel
 Summary:    Nemo Connectivity development files
-Group:      Development/Libraries
 Requires:   %{name} = %{version}-%{release}
 Requires:   pkgconfig(Qt5DBus)
 Requires:   pkgconfig(connman-qt5) >= 1.2.16
