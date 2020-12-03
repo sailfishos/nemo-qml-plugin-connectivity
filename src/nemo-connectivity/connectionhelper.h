@@ -57,6 +57,8 @@ class NEMO_CONNECTIVITY_EXPORT ConnectionHelper : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(bool online READ online NOTIFY onlineChanged)
+    Q_PROPERTY(bool selectorVisible READ selectorVisible NOTIFY selectorVisibleChanged)
+    Q_PROPERTY(Status status READ status NOTIFY statusChanged)
 
 public:
     ConnectionHelper(QObject *parent = 0);
@@ -65,12 +67,24 @@ public:
     Q_INVOKABLE void attemptToConnectNetwork();
     Q_INVOKABLE void requestNetwork();
 
+    bool selectorVisible() const;
     bool online() const;
+
+    enum Status {
+        Offline = 0,
+        Connecting,
+        Connected,
+        Online
+    };
+    Q_ENUM(Status)
+    Status status() const;
 
 Q_SIGNALS:
     void networkConnectivityEstablished();
     void networkConnectivityUnavailable();
     void onlineChanged();
+    void selectorVisibleChanged();
+    void statusChanged();
 
 private Q_SLOTS:
     void performRequest();
@@ -84,7 +98,11 @@ private Q_SLOTS:
     void networkStateChanged(const QString &);
     void openConnectionDialog();
 
+    void getConnmanManagerProperties(const QVariantMap &props);
+
 private:
+    void updateStatus(Status status);
+    void determineDefaultNetworkStatusCheckUrl();
     void handleNetworkEstablished();
     void handleNetworkUnavailable();
     void _attemptToConnectNetwork(bool explicitAttempt);
@@ -92,11 +110,14 @@ private:
 private:
     QTimer m_timeoutTimer;
     QNetworkAccessManager *m_networkAccessManager;
+    QString m_defaultNetworkStatusCheckUrl;
     bool m_networkConfigReady;
+    bool m_delayedNetworkStatusCheckUrl;
     bool m_delayedAttemptToConnect;
     bool m_detectingNetworkConnection;
     bool m_connmanIsAvailable;
-    bool m_online;
+    bool m_selectorVisible;
+    Status m_status;
 
     NetworkManager *m_netman;
 
