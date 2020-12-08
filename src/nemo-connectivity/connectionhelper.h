@@ -92,6 +92,8 @@ private Q_SLOTS:
     void handleCanaryRequestFinished();
     void emitFailureIfNeeded(); // due to timeout.
 
+    void handleNetworkEstablished();
+    void handleNetworkUnavailable();
     void handleConnectionSelectorClosed(bool);
     void connmanAvailableChanged(bool);
     void serviceErrorChanged(const QString &);
@@ -103,8 +105,6 @@ private Q_SLOTS:
 private:
     void updateStatus(Status status);
     void determineDefaultNetworkStatusCheckUrl();
-    void handleNetworkEstablished();
-    void handleNetworkUnavailable();
     void _attemptToConnectNetwork(bool explicitAttempt);
 
 private:
