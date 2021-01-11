@@ -69,6 +69,10 @@ MobileDataConnectionPrivate::~MobileDataConnectionPrivate()
 
 bool MobileDataConnectionPrivate::isValid() const
 {
+    qCDebug(CONNECTIVITY) << "isValid:" << (networkService && networkService->isValid() && !networkService->path().isEmpty())
+                          << (connectionManager && connectionManager->isValid())
+                          << (connectionContext && connectionContext->isValid())
+                          << (networkService && networkService->available());
     return networkService && networkService->isValid() && !networkService->path().isEmpty()
             && connectionManager && connectionManager->isValid()
             && connectionContext && connectionContext->isValid()
@@ -123,6 +127,10 @@ void MobileDataConnectionPrivate::updateStatus()
 void MobileDataConnectionPrivate::updateNetworkServicePath()
 {
     bool simMgrValid = isSimManagerValid();
+    qCDebug(CONNECTIVITY()) << "MobileDataConnection update network service path:" << simManager.isValid() << simManager.present()
+                            << simManagerValid << "auto connect service:" << networkService->autoConnect()
+                            << "pending auto connect:" << autoConnectPending
+                            << "d_ptr->autoConnect: " << autoConnect;
     if (simMgrValid != simManagerValid) {
         simManagerValid = simMgrValid;
         updateSubscriberIdentity();
@@ -136,6 +144,8 @@ void MobileDataConnectionPrivate::updateSubscriberIdentity()
     QString newSubscriberIdentity = isSimManagerValid() ? simManager.subscriberIdentity() : QString();
     if (subscriberIdentity != newSubscriberIdentity) {
         subscriberIdentity = newSubscriberIdentity;
+        qCInfo(CONNECTIVITY) << "imsi:" << subscriberIdentity;
+        updateDefaultDataSim();
         emit q->subscriberIdentityChanged();
     }
 }
@@ -219,6 +229,10 @@ void MobileDataConnectionPrivate::createDataContext(const QString &modemPath)
     });
 
     QObject::connect(connectionContext, &QOfonoConnectionContext::contextPathChanged, q, [=](const QString &contextPath) {
+        qCDebug(CONNECTIVITY) << "QOfonoConnectionContext contextPathChanged"
+                              << "auto connnect service:" << networkService->autoConnect()
+                              << "pending auto connect:" << autoConnectPending
+                              << "d_ptr autoConnect: " << autoConnect;;
         if (contextPath.isEmpty()) {
             networkService->setPath(QString());
         } else {
@@ -280,11 +294,24 @@ void MobileDataConnectionPrivate::requestConnect()
     }
 }
 
+void MobileDataConnectionPrivate::updateDefaultDataSim()
+{
+    bool multiSimSupported = modemManager->ready() && modemManager->availableModems().count() > 1;
+    qCDebug(CONNECTIVITY) << "Multisim supported:" << multiSimSupported
+                          << "autoConnect:" << autoConnect << "pending auto connect:" << autoConnectPending
+                          << "mm ready:" << modemManager->ready()
+                          << "mm available modems" << modemManager->availableModems().count()
+                          << "imsi:" << subscriberIdentity;
+    if (autoConnect && autoConnectPending && !subscriberIdentity.isEmpty() && multiSimSupported) {
+        q->setDefaultDataSim(subscriberIdentity);
+    }
+}
+
 MobileDataConnection::MobileDataConnection()
     : d_ptr(new MobileDataConnectionPrivate(this))
 {
     QObject::connect(&d_ptr->simManager, &QOfonoSimManager::modemPathChanged,
-                     this, [=](QString modemPath) {
+            this, [=](QString modemPath) {
         d_ptr->networkRegistration.setModemPath(modemPath);
 
         if (d_ptr->connectionManager && modemPath != d_ptr->connectionManager->modemPath()) {
@@ -314,16 +341,21 @@ MobileDataConnection::MobileDataConnection()
     });
 
     QObject::connect(&d_ptr->networkManager, &NetworkManager::availabilityChanged, this, [=]() {
+        qCDebug(CONNECTIVITY) << "NetworkManager::availabilityChanged auto service:" << d_ptr->networkService->autoConnect()
+                              << "pending auto connect:" << d_ptr->autoConnectPending
+                              << "d_ptr auto connect: " << d_ptr->autoConnect;
         d_ptr->networkService->setPath(d_ptr->servicePathForContext());
     });
 
     QObject::connect(&d_ptr->networkManager, &NetworkManager::cellularServicesChanged, this, [=]() {
+        qCDebug(CONNECTIVITY) << "NetworkManager::servicesChanged auto service:" << d_ptr->networkService->autoConnect()
+                              << "pending auto connect:" << d_ptr->autoConnectPending
+                              << "d_ptr auto connect: " << d_ptr->autoConnect;
         d_ptr->networkService->setPath(d_ptr->servicePathForContext());
     });
 
     QObject::connect(&d_ptr->networkManager, &NetworkManager::offlineModeChanged,
-                     this, &MobileDataConnection::offlineModeChanged);
-
+            this, &MobileDataConnection::offlineModeChanged);
 
     QObject::connect(d_ptr->networkService, &NetworkService::errorChanged, this, [=](const QString &error) {
         if (!error.isEmpty()) {
@@ -333,15 +365,17 @@ MobileDataConnection::MobileDataConnection()
     });
     QObject::connect(d_ptr->networkService, &NetworkService::stateChanged, this, [=]() {
         // This and available should be clearly visible in the logs.
-        qCDebug(CONNECTIVITY, "####################### MobileDataConnection::stateChanged state: %s %s available: %d %s",
-                qPrintable(d_ptr->networkService->state()), qPrintable(modemPath()),
-                d_ptr->networkService->available(), qPrintable(objectName()));
+        qCDebug(CONNECTIVITY, "####################### MobileDataConnection::stateChanged state: %s %s available: %d %s"
+                , qPrintable(d_ptr->networkService->state()), qPrintable(modemPath())
+                , d_ptr->networkService->available(), qPrintable(objectName()));
         d_ptr->updateStatus();
         emit stateChanged();
     });
 
     QObject::connect(d_ptr->networkService, &NetworkService::validChanged, this, [=]() {
-        qCDebug(CONNECTIVITY, "NetworkService::validChanged mobile data valid old: %d new %d", d_ptr->valid, d_ptr->isValid());
+        qCDebug(CONNECTIVITY, "NetworkService::validChanged mobile data valid old: %d new %d auto connect %d pending auto %d, d_ptr->autoConnect: %d"
+                , d_ptr->valid , d_ptr->isValid()
+                , d_ptr->networkService->autoConnect(), d_ptr->autoConnectPending, d_ptr->autoConnect);
         d_ptr->updateValid();
         if (d_ptr->autoConnectPending) {
             d_ptr->networkService->setAutoConnect(d_ptr->autoConnect);
@@ -350,9 +384,9 @@ MobileDataConnection::MobileDataConnection()
     });
 
     QObject::connect(d_ptr->networkService, &NetworkService::availableChanged, this, [=]() {
-        qCDebug(CONNECTIVITY, "####################### MobileDataConnection::availableChanged state: %s %s available: %d %s",
-                qPrintable(d_ptr->networkService->state()), qPrintable(modemPath()),
-                d_ptr->networkService->available(), qPrintable(objectName()));
+        qCDebug(CONNECTIVITY, "####################### MobileDataConnection::availableChanged state: %s %s available: %d %s"
+                , qPrintable(d_ptr->networkService->state()), qPrintable(modemPath())
+                , d_ptr->networkService->available(), qPrintable(objectName()));
         d_ptr->updateValid();
         d_ptr->updateStatus();
         emit stateChanged();
@@ -360,18 +394,20 @@ MobileDataConnection::MobileDataConnection()
 
     QObject::connect(d_ptr->networkService, &NetworkService::connectedChanged, this, &MobileDataConnection::connectedChanged);
     QObject::connect(d_ptr->networkService, &NetworkService::autoConnectChanged, this, [=]() {
-        qCDebug(CONNECTIVITY, "NetworkService::autoConnectChanged a: %d c: %d v: %d modem: %s s: %s available: %d",
-                d_ptr->networkService->autoConnect(), d_ptr->connectingService,
-                d_ptr->valid, qPrintable(d_ptr->modemManager->defaultDataModem()),
-                qPrintable(state()), d_ptr->networkService->available());
+        qCDebug(CONNECTIVITY, "NetworkService::autoConnectChanged a: %d c: %d v: %d modem: %s s: %s available: %d"
+                , d_ptr->networkService->autoConnect(), d_ptr->connectingService
+                , d_ptr->valid, qPrintable(d_ptr->modemManager->defaultDataModem())
+                , qPrintable(state()), d_ptr->networkService->available());
         if (!d_ptr->autoConnectPending) {
             emit autoConnectChanged();
         }
     });
 
     QObject::connect(d_ptr->networkService, &NetworkService::pathChanged, this, [=]() {
-        qCDebug(CONNECTIVITY, "NetworkService::pathChanged %s modem: %s",
-                qPrintable(d_ptr->networkService->path()), qPrintable(d_ptr->modemManager->defaultDataModem()));
+        qCDebug(CONNECTIVITY, "MobileDataConnection %s NetworkService::pathChanged %s modem: %s"
+                , qPrintable(objectName())
+                , qPrintable(d_ptr->networkService->path())
+                , qPrintable(d_ptr->modemManager->defaultDataModem()));
         d_ptr->updateValid();
         emit identifierChanged();
     });
@@ -379,23 +415,27 @@ MobileDataConnection::MobileDataConnection()
     QObject::connect(d_ptr->networkService, &NetworkService::savedChanged, this, &MobileDataConnection::savedChanged);
 
     QObject::connect(&d_ptr->networkRegistration, &QOfonoNetworkRegistration::statusChanged,
-                     this, &MobileDataConnection::roamingChanged);
+            this, &MobileDataConnection::roamingChanged);
 
     QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::defaultDataSimChanged,
                      this, [=]() {
-        qCDebug(CONNECTIVITY, "QOfonoExtModemManager::defaultDataSimChanged: %s %s %s",
-                qPrintable(d_ptr->servicePathForContext()), qPrintable(modemPath()), qPrintable(objectName()));
+        qCDebug(CONNECTIVITY, "QOfonoExtModemManager::defaultDataSimChanged: %s %s %s auto connect: %d pending auto: %d, dptr: %d"
+                , qPrintable(d_ptr->servicePathForContext()), qPrintable(modemPath())
+                , qPrintable(objectName())
+                , d_ptr->networkService->autoConnect()
+                , d_ptr->autoConnectPending
+                , d_ptr->autoConnect);
         d_ptr->networkService->setPath(d_ptr->servicePathForContext());
         emit defaultDataSimChanged();
     });
     QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::presentSimCountChanged,
-                     this, &MobileDataConnection::presentSimCountChanged);
+            this, &MobileDataConnection::presentSimCountChanged);
     QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::availableModemsChanged,
-                     this, &MobileDataConnection::slotCountChanged);
+            this, &MobileDataConnection::slotCountChanged);
     QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::defaultDataModemChanged,
                      this, [=](QString modemPath) {
-        qCDebug(CONNECTIVITY, "QOfonoExtModemManager::defaultDataModemChanged: %s use default: %d",
-                qPrintable(modemPath), d_ptr->useDefaultModem);
+        qCDebug(CONNECTIVITY, "QOfonoExtModemManager::defaultDataModemChanged: %s use default: %d %p %s"
+                , qPrintable(modemPath), d_ptr->useDefaultModem, this, qPrintable(objectName()));
         if (d_ptr->useDefaultModem) {
             d_ptr->simManager.setModemPath(modemPath);
             d_ptr->updateDataContext();
@@ -431,6 +471,11 @@ void MobileDataConnection::setAutoConnect(bool autoConnect)
     } else {
         d->autoConnect = autoConnect;
         d->autoConnectPending = true;
+    }
+
+    if (autoConnect) {
+        qCInfo(CONNECTIVITY) << "auto connecting";
+        d->updateDefaultDataSim();
     }
 }
 
@@ -499,10 +544,18 @@ QString MobileDataConnection::defaultDataSim() const
     return d->modemManager->defaultDataSim();
 }
 
-void MobileDataConnection::setDefaultDataSim(const QString &defaultDataSim)
+void MobileDataConnection::setDefaultDataSim(const QString &subscriberIdentity)
 {
     Q_D(MobileDataConnection);
-    d->modemManager->setDefaultDataSim(defaultDataSim);
+
+    qCDebug(CONNECTIVITY) << subscriberIdentity << "mm valid:" << d->modemManager->valid()
+                          << "mm ready:" << d->modemManager->ready()
+                          << "mm presenti sim count:" << d->modemManager->presentSimCount()
+                          << "mm active sim count:" << d->modemManager->activeSimCount()
+                          << "mm available modems:" << d->modemManager->availableModems()
+                          << "mm enabled modems:" << d->modemManager->enabledModems();
+
+    d->modemManager->setDefaultDataSim(subscriberIdentity);
 }
 
 int MobileDataConnection::presentSimCount() const
