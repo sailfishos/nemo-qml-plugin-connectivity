@@ -284,7 +284,7 @@ MobileDataConnection::MobileDataConnection()
     : d_ptr(new MobileDataConnectionPrivate(this))
 {
     QObject::connect(&d_ptr->simManager, &QOfonoSimManager::modemPathChanged,
-            this, [=](QString modemPath) {
+                     this, [=](QString modemPath) {
         d_ptr->networkRegistration.setModemPath(modemPath);
 
         if (d_ptr->connectionManager && modemPath != d_ptr->connectionManager->modemPath()) {
@@ -322,7 +322,7 @@ MobileDataConnection::MobileDataConnection()
     });
 
     QObject::connect(&d_ptr->networkManager, &NetworkManager::offlineModeChanged,
-            this, &MobileDataConnection::offlineModeChanged);
+                     this, &MobileDataConnection::offlineModeChanged);
 
 
     QObject::connect(d_ptr->networkService, &NetworkService::errorChanged, this, [=](const QString &error) {
@@ -379,7 +379,7 @@ MobileDataConnection::MobileDataConnection()
     QObject::connect(d_ptr->networkService, &NetworkService::savedChanged, this, &MobileDataConnection::savedChanged);
 
     QObject::connect(&d_ptr->networkRegistration, &QOfonoNetworkRegistration::statusChanged,
-            this, &MobileDataConnection::roamingChanged);
+                     this, &MobileDataConnection::roamingChanged);
 
     QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::defaultDataSimChanged,
                      this, [=]() {
@@ -389,9 +389,9 @@ MobileDataConnection::MobileDataConnection()
         emit defaultDataSimChanged();
     });
     QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::presentSimCountChanged,
-            this, &MobileDataConnection::presentSimCountChanged);
+                     this, &MobileDataConnection::presentSimCountChanged);
     QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::availableModemsChanged,
-            this, &MobileDataConnection::slotCountChanged);
+                     this, &MobileDataConnection::slotCountChanged);
     QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::defaultDataModemChanged,
                      this, [=](QString modemPath) {
         qCDebug(CONNECTIVITY, "QOfonoExtModemManager::defaultDataModemChanged: %s use default: %d",
