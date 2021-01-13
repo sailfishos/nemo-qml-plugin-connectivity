@@ -32,7 +32,7 @@
 #include "mobiledataconnection.h"
 #include "mobiledataconnection_p.h"
 
-Q_LOGGING_CATEGORY(CONNECTIVITY, "qt.nemo.connectivity")
+Q_LOGGING_CATEGORY(CONNECTIVITY, "qt.nemo.connectivity", QtWarningMsg)
 
 namespace Nemo {
 
