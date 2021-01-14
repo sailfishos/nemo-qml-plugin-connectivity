@@ -70,6 +70,7 @@ public:
     void createDataContext(const QString &modemPath);
     void updateDataContext();
     bool hasDataContext();
+    void updateDefaultDataSim();
 
     void requestConnect();
 

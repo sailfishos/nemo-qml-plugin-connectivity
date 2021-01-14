@@ -110,7 +110,7 @@ public:
     void setModemPath(const QString &modemPath);
 
     QString defaultDataSim() const;
-    void setDefaultDataSim(const QString &defaultDataSim);
+    void setDefaultDataSim(const QString &subscriberIdentity);
 
     int presentSimCount() const;
 
