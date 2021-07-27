@@ -1,5 +1,5 @@
-/* Copyright (c) 2013 - 2019 Jolla Ltd.
- * Copyright (c) 2019 Open Mobile Platform LLC.
+/* Copyright (c) 2019 - 2021 Open Mobile Platform LLC.
+ * Copyright (c) 2013 - 2019 Jolla Ltd.
  *
  * License: BSD
  *
@@ -132,6 +132,14 @@ bool ConnectionHelper::selectorVisible() const
 ConnectionHelper::Status ConnectionHelper::status() const
 {
     return m_status;
+}
+
+void ConnectionHelper::setSelectorVisible(bool selectorVisible)
+{
+    if (m_selectorVisible != selectorVisible) {
+        m_selectorVisible = selectorVisible;
+        emit selectorVisibleChanged();
+    }
 }
 
 void ConnectionHelper::updateStatus(ConnectionHelper::Status status)
@@ -312,7 +320,7 @@ void ConnectionHelper::openConnectionDialog()
         if (reply.isError()) {
             serviceErrorChanged(reply.error().message());
         } else {
-            m_selectorVisible = true;
+            setSelectorVisible(true);
         }
     });
 }
@@ -326,11 +334,7 @@ void ConnectionHelper::handleConnectionSelectorClosed(bool connectionSelected)
         // perform a status request in case we are behind a captive portal
         QMetaObject::invokeMethod(this, "performRequest", Qt::QueuedConnection);
     }
-
-    if (m_selectorVisible) {
-        m_selectorVisible = false;
-        emit selectorVisibleChanged();
-    }
+    setSelectorVisible(false);
 }
 
 void ConnectionHelper::serviceErrorChanged(const QString &errorString)

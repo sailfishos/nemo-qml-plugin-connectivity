@@ -106,6 +106,7 @@ private:
     void updateStatus(Status status);
     void determineDefaultNetworkStatusCheckUrl();
     void _attemptToConnectNetwork(bool explicitAttempt);
+    void setSelectorVisible(bool selectorVisible);
 
 private:
     QTimer m_timeoutTimer;
