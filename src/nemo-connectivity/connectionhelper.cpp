@@ -41,6 +41,7 @@
 #include <QtDBus/QDBusPendingCallWatcher>
 
 #include <connman-qt5/networkmanager.h>
+#include <connman-qt5/networktechnology.h>
 
 namespace Nemo {
 

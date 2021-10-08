@@ -40,6 +40,7 @@
 
 #include <networkmanager.h>
 #include <networkservice.h>
+#include <networktechnology.h>
 
 #include <qofonoconnectioncontext.h>
 #include <qofononetworkregistration.h>
@@ -62,6 +63,9 @@ public:
     void updateNetworkServicePath();
     void updateSubscriberIdentity();
     void updateServiceProviderName();
+    void updateServiceAndTechnology();
+    void updateTechnology();
+    void techPoweredChanged(bool techPowered);
 
     QString servicePathForContext();
 
@@ -99,6 +103,7 @@ public:
 
     NetworkManager networkManager;
     NetworkService *networkService;
+    NetworkTechnology *networkTechnology;
     QOfonoNetworkRegistration networkRegistration;
 
     QSharedPointer<QOfonoConnectionManager> connectionManager;
