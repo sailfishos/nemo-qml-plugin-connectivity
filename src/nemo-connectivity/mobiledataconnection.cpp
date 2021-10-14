@@ -49,6 +49,7 @@ MobileDataConnectionPrivate::MobileDataConnectionPrivate(MobileDataConnection *q
     , simManager(q)
     , networkManager(q)
     , networkService(new NetworkService(q))
+    , networkTechnology(nullptr)
     , networkRegistration(q)
     , connectionManager(nullptr)
     , connectionContext(nullptr)
@@ -135,7 +136,7 @@ void MobileDataConnectionPrivate::updateNetworkServicePath()
         simManagerValid = simMgrValid;
         updateSubscriberIdentity();
         updateServiceProviderName();
-        networkService->setPath(servicePathForContext());
+        updateServiceAndTechnology();
     }
 }
 
@@ -157,6 +158,54 @@ void MobileDataConnectionPrivate::updateServiceProviderName()
         serviceProviderName = newName;
         emit q->serviceProviderNameChanged();
     }
+}
+
+void MobileDataConnectionPrivate::updateTechnology()
+{
+    NetworkTechnology *newTech;
+    QString technologyPath = QStringLiteral("cellular");
+    bool oldPowered = false;
+    bool initializing = true;
+
+    newTech = networkManager.getTechnology(technologyPath);
+
+    qCDebug(CONNECTIVITY, "####### update technology from %p to %p", networkTechnology, newTech);
+
+    if (networkTechnology == newTech) {
+        return;
+    }
+
+    if (networkTechnology) {
+        /* ConnMan restart has happened and in lib networkTechnology is gone */
+        if (newTech) {
+            oldPowered = networkTechnology->powered();
+            QObject::disconnect(networkTechnology, &NetworkTechnology::poweredChanged, q, 0);
+        }
+
+        initializing = false;
+    }
+
+    networkTechnology = newTech;
+
+    if (networkTechnology) {
+        QObject::connect(networkTechnology, &NetworkTechnology::poweredChanged, q, [=](bool powered) {
+            techPoweredChanged(powered);
+        });
+
+        bool powered = networkTechnology->powered();
+
+        /* Do powered state change only if changing tech with different state */
+        if (powered != oldPowered && !initializing) {
+            qCDebug(CONNECTIVITY, "####### update technology powered changed");
+            techPoweredChanged(powered);
+        }
+    }
+}
+
+void MobileDataConnectionPrivate::updateServiceAndTechnology()
+{
+    networkService->setPath(servicePathForContext());
+    updateTechnology();
 }
 
 QString MobileDataConnectionPrivate::servicePathForContext()
@@ -236,7 +285,7 @@ void MobileDataConnectionPrivate::createDataContext(const QString &modemPath)
         if (contextPath.isEmpty()) {
             networkService->setPath(QString());
         } else {
-            networkService->setPath(servicePathForContext());
+            updateServiceAndTechnology();
         }
     });
     QObject::connect(connectionContext, &QOfonoConnectionContext::validChanged, q, [=]() {
@@ -273,7 +322,12 @@ void MobileDataConnectionPrivate::updateDataContext()
         }
         connectionContext->setContextPath(inetContextPath);
     } else if (hasDataContext() && !connectionManager->powered()) {
+        qCDebug(CONNECTIVITY, "######## Set powered ON");
         connectionManager->setPowered(true);
+
+        if (networkTechnology) {
+            networkTechnology->setPowered(true);
+        }
     }
 
 }
@@ -344,14 +398,14 @@ MobileDataConnection::MobileDataConnection()
         qCDebug(CONNECTIVITY) << "NetworkManager::availabilityChanged auto service:" << d_ptr->networkService->autoConnect()
                               << "pending auto connect:" << d_ptr->autoConnectPending
                               << "d_ptr auto connect: " << d_ptr->autoConnect;
-        d_ptr->networkService->setPath(d_ptr->servicePathForContext());
+        d_ptr->updateServiceAndTechnology();
     });
 
     QObject::connect(&d_ptr->networkManager, &NetworkManager::cellularServicesChanged, this, [=]() {
         qCDebug(CONNECTIVITY) << "NetworkManager::servicesChanged auto service:" << d_ptr->networkService->autoConnect()
                               << "pending auto connect:" << d_ptr->autoConnectPending
                               << "d_ptr auto connect: " << d_ptr->autoConnect;
-        d_ptr->networkService->setPath(d_ptr->servicePathForContext());
+        d_ptr->updateServiceAndTechnology();
     });
 
     QObject::connect(&d_ptr->networkManager, &NetworkManager::offlineModeChanged,
@@ -425,7 +479,7 @@ MobileDataConnection::MobileDataConnection()
                 , d_ptr->networkService->autoConnect()
                 , d_ptr->autoConnectPending
                 , d_ptr->autoConnect);
-        d_ptr->networkService->setPath(d_ptr->servicePathForContext());
+        d_ptr->updateServiceAndTechnology();
         emit defaultDataSimChanged();
     });
     QObject::connect(d_ptr->modemManager.data(), &QOfonoExtModemManager::presentSimCountChanged,
@@ -441,6 +495,9 @@ MobileDataConnection::MobileDataConnection()
             d_ptr->updateDataContext();
         }
     });
+
+    /* If we can get network technology initialized the poweredChanged will be connected */
+    d_ptr->updateTechnology();
 }
 
 MobileDataConnection::~MobileDataConnection()
@@ -645,6 +702,23 @@ void MobileDataConnection::disconnect()
     d->networkService->requestDisconnect();
     d->connectingService = false;
     d->updateStatus();
+}
+
+void MobileDataConnectionPrivate::techPoweredChanged(bool techPowered)
+{
+    bool powered;
+
+    if (!hasDataContext()) {
+        return;
+    }
+
+    powered = connectionManager->powered();
+
+    qCDebug(CONNECTIVITY, "NetworkTechnology poweredChanged: internal powered %d tech powered %d ", powered, techPowered);
+
+    if (networkTechnology && powered != techPowered) {
+        networkTechnology->setPowered(powered);
+    }
 }
 
 }
