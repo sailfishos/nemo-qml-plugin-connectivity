@@ -179,7 +179,13 @@ void MobileDataConnectionPrivate::updateTechnology()
         /* ConnMan restart has happened and in lib networkTechnology is gone */
         if (newTech) {
             oldPowered = networkTechnology->powered();
-            QObject::disconnect(networkTechnology, &NetworkTechnology::poweredChanged, q, 0);
+
+            /*
+             * TODO: Re-enable this after there is no race or there is no need
+             * for this as issue is addressed on the lowere levels. See the
+             * description below.
+             */
+            //QObject::disconnect(networkTechnology, &NetworkTechnology::poweredChanged, q, 0);
         }
 
         initializing = false;
@@ -188,9 +194,18 @@ void MobileDataConnectionPrivate::updateTechnology()
     networkTechnology = newTech;
 
     if (networkTechnology) {
-        QObject::connect(networkTechnology, &NetworkTechnology::poweredChanged, q, [=](bool powered) {
+        /*
+         * TODO: This causes a race when cellular technology is disabled via
+         * ConnMan D-Bus API as the signal may and usually gets processed
+         * before Ofono has handled the request and reported the state back to
+         * ConnMan and to UI causing techPoweredChanged() to set back the
+         * previous powered state. Re-enable this after the race is no longer
+         * an issue or remove completely if the changes are to be handled on
+         * the lower levels.
+         */
+        /*QObject::connect(networkTechnology, &NetworkTechnology::poweredChanged, q, [=](bool powered) {
             techPoweredChanged(powered);
-        });
+        });*/
 
         bool powered = networkTechnology->powered();
 
