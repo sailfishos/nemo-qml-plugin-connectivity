@@ -409,6 +409,11 @@ MobileDataConnection::MobileDataConnection()
         d_ptr->updateServiceProviderName();
     });
 
+    QObject::connect(&d_ptr->networkManager, &NetworkManager::technologiesChanged, this, [=]() {
+        qCDebug(CONNECTIVITY) << "NetworkManager::technologiesChanged";
+        d_ptr->updateServiceAndTechnology();
+    });
+
     QObject::connect(&d_ptr->networkManager, &NetworkManager::availabilityChanged, this, [=]() {
         qCDebug(CONNECTIVITY) << "NetworkManager::availabilityChanged auto service:" << d_ptr->networkService->autoConnect()
                               << "pending auto connect:" << d_ptr->autoConnectPending
