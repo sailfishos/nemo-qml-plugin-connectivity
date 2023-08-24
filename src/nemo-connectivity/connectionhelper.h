@@ -33,18 +33,23 @@
 #define NEMO_CONNECTION_HELPER_H
 
 #include <QObject>
-
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QNetworkConfigurationManager>
 #include <QNetworkSession>
+#endif
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 
 #include <nemo-connectivity/global.h>
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <connman-qt6/networkmanager.h>
+#include <connman-qt6/networktechnology.h>
+#include <connman-qt6/networkservice.h>
+#else
 #include <connman-qt5/networkmanager.h>
 #include <connman-qt5/networktechnology.h>
 #include <connman-qt5/networkservice.h>
-
+#endif
 #include <QTimer>
 
 QT_BEGIN_NAMESPACE
@@ -88,7 +93,11 @@ Q_SIGNALS:
 
 private Q_SLOTS:
     void performRequest();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    void handleCanaryRequestError();
+#else
     void handleCanaryRequestError(const QNetworkReply::NetworkError &error);
+#endif
     void handleCanaryRequestFinished();
     void emitFailureIfNeeded(); // due to timeout.
 

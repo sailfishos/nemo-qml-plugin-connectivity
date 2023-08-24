@@ -39,10 +39,13 @@
 #include <QtDBus/QDBusPendingReply>
 #include <QtDBus/QDBusPendingCall>
 #include <QtDBus/QDBusPendingCallWatcher>
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <connman-qt6/networkmanager.h>
+#include <connman-qt6/networktechnology.h>
+#else
 #include <connman-qt5/networkmanager.h>
 #include <connman-qt5/networktechnology.h>
-
+#endif
 namespace Nemo {
 
 ConnectionHelper::ConnectionHelper(QObject *parent)
@@ -252,11 +255,18 @@ void ConnectionHelper::performRequest()
     // for a Captive Portal redirect, in which case we should consider network
     // connectivity to be unavailable (as it requires user intervention).
     connect(reply, &QNetworkReply::finished, this, &ConnectionHelper::handleCanaryRequestFinished);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    connect(reply, &QNetworkReply::error, this, &ConnectionHelper::handleCanaryRequestError);
+#else
     connect(reply, static_cast<void (QNetworkReply::*)(QNetworkReply::NetworkError)>(&QNetworkReply::error),
             this, &ConnectionHelper::handleCanaryRequestError);
+#endif
 }
-
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+void ConnectionHelper::handleCanaryRequestError()
+#else
 void ConnectionHelper::handleCanaryRequestError(const QNetworkReply::NetworkError &)
+#endif
 {
     QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
     reply->setProperty("isError", QVariant::fromValue<bool>(true));

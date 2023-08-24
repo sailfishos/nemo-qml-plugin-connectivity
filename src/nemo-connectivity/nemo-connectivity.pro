@@ -15,9 +15,9 @@ INCLUDEPATH += ..
 
 DEFINES += NEMO_BUILD_CONNECTIVITY_LIBRARY
 
-PKGCONFIG += connman-qt5 \
+PKGCONFIG += connman-qt$${QT_MAJOR_VERSION} \
     qofonoext \
-    qofono-qt5
+    qofono-qt$${QT_MAJOR_VERSION}
 
 SOURCES += \
         connectionhelper.cpp \

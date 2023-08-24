@@ -36,8 +36,11 @@
 
 #include <QObject>
 #include <QLoggingCategory>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <connman-qt6/networkservice.h>
+#else
 #include <connman-qt5/networkservice.h>
-
+#endif
 Q_DECLARE_LOGGING_CATEGORY(CONNECTIVITY)
 
 namespace Nemo {
