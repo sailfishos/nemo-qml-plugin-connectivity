@@ -2,9 +2,11 @@ TARGET = nemoconnectivity
 PLUGIN_IMPORT_PATH = Nemo/Connectivity
 
 TEMPLATE = lib
-CONFIG += qt plugin hide_symbols
+CONFIG += qt plugin hide_symbols link_pkgconfig
 QT = qml dbus
-LIBS += -lconnman-qt$${QT_MAJOR_VERSION} -L../nemo-connectivity -lnemoconnectivity
+PKGCONFIG += connman-qt$${QT_MAJOR_VERSION}
+LIBS += -L../nemo-connectivity -lnemoconnectivity
+
 target.path = $$[QT_INSTALL_QML]/$$PLUGIN_IMPORT_PATH
 INSTALLS += target
 
