@@ -33,28 +33,23 @@
 #define NEMO_CONNECTION_HELPER_H
 
 #include <QObject>
+#include <QTimer>
+
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QNetworkConfigurationManager>
 #include <QNetworkSession>
 #endif
+
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 
 #include <nemo-connectivity/global.h>
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-#include <connman-qt6/networkmanager.h>
-#include <connman-qt6/networktechnology.h>
-#include <connman-qt6/networkservice.h>
-#else
-#include <connman-qt5/networkmanager.h>
-#include <connman-qt5/networktechnology.h>
-#include <connman-qt5/networkservice.h>
-#endif
-#include <QTimer>
 
 QT_BEGIN_NAMESPACE
 class QDBusInterface;
 QT_END_NAMESPACE
+
+class ConnectionHelperPrivate;
 
 namespace Nemo {
 
@@ -118,20 +113,7 @@ private:
     void setSelectorVisible(bool selectorVisible);
 
 private:
-    QTimer m_timeoutTimer;
-    QNetworkAccessManager *m_networkAccessManager;
-    QString m_defaultNetworkStatusCheckUrl;
-    bool m_networkConfigReady;
-    bool m_delayedNetworkStatusCheckUrl;
-    bool m_delayedAttemptToConnect;
-    bool m_detectingNetworkConnection;
-    bool m_connmanIsAvailable;
-    bool m_selectorVisible;
-    Status m_status;
-
-    NetworkManager *m_netman;
-
-    QDBusInterface *m_connectionSelectorInterface;
+    ConnectionHelperPrivate *d_ptr;
 };
 
 }
