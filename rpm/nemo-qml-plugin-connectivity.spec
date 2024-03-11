@@ -11,6 +11,7 @@ BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Network)
 BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(Qt5DBus)
+BuildRequires:  pkgconfig(Qt5XmlPatterns)
 BuildRequires:  pkgconfig(connman-qt5) >= 1.2.16
 BuildRequires:  pkgconfig(qofonoext)
 BuildRequires:  pkgconfig(qofono-qt5)
