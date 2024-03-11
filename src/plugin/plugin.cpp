@@ -36,6 +36,13 @@
 
 #include "mobiledataconnection.h"
 #include "connectionhelper.h"
+#include "settingsvpnmodel.h"
+
+template<class T>
+static QObject *api_factory(QQmlEngine *, QJSEngine *)
+{
+    return new T;
+}
 
 class Q_DECL_EXPORT NemoConnectivityPlugin : public QQmlExtensionPlugin
 {
@@ -56,6 +63,7 @@ public:
         Q_ASSERT(uri == QLatin1String("Nemo.Connectivity"));
         qmlRegisterType<Nemo::ConnectionHelper>(uri, 1, 0, "ConnectionHelper");
         qmlRegisterType<Nemo::MobileDataConnection>(uri, 1, 0, "MobileDataConnection");
+        qmlRegisterSingletonType<SettingsVpnModel>(uri, 1, 0, "SettingsVpnModel", api_factory<SettingsVpnModel>);
     }
 };
 

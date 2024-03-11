@@ -2,31 +2,32 @@ TEMPLATE = lib
 TARGET = nemoconnectivity
 
 CONFIG += \
-        c++11 \
         hide_symbols \
         link_pkgconfig \
         create_pc \
         create_prl \
         no_install_prl
 
-QT = dbus network
+QT = dbus network qml xmlpatterns
 
 INCLUDEPATH += ..
 
 DEFINES += NEMO_BUILD_CONNECTIVITY_LIBRARY
 
-PKGCONFIG += connman-qt$${QT_MAJOR_VERSION} \
+PKGCONFIG += \
+    connman-qt$${QT_MAJOR_VERSION} \
     qofonoext \
     qofono-qt$${QT_MAJOR_VERSION}
 
 SOURCES += \
         connectionhelper.cpp \
-        mobiledataconnection.cpp
-
+        mobiledataconnection.cpp \
+        settingsvpnmodel.cpp
 
 PUBLIC_HEADERS += \
         connectionhelper.h \
         mobiledataconnection.h \
+        settingsvpnmodel.h \
         global.h
 
 HEADERS += $$PUBLIC_HEADERS \
@@ -43,6 +44,7 @@ QMAKE_PKGCONFIG_LIBDIR = $$target.path
 QMAKE_PKGCONFIG_INCDIR = $$public_headers.path
 QMAKE_PKGCONFIG_DESTDIR = pkgconfig
 QMAKE_PKGCONFIG_VERSION = $$VERSION
+QMAKE_PKGCONFIG_REQUIRES = Qt5Core Qt5DBus connman-qt$${QT_MAJOR_VERSION}
 
 INSTALLS += \
         public_headers \
