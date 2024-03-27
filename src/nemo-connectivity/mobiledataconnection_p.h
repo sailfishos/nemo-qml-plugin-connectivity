@@ -101,7 +101,7 @@ public:
 
     QOfonoSimManager simManager;
 
-    NetworkManager networkManager;
+    QSharedPointer<NetworkManager> networkManager;
     NetworkService *networkService;
     NetworkTechnology *networkTechnology;
     QOfonoNetworkRegistration networkRegistration;

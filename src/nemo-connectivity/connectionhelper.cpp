@@ -66,7 +66,7 @@ public:
     bool m_selectorVisible;
     Nemo::ConnectionHelper::Status m_status;
 
-    NetworkManager *m_netman;
+    QSharedPointer<NetworkManager> m_netman;
 
     QDBusInterface *m_connectionSelectorInterface;
 };
@@ -80,7 +80,7 @@ ConnectionHelperPrivate::ConnectionHelperPrivate()
     , m_connmanIsAvailable(false)
     , m_selectorVisible(false)
     , m_status(Nemo::ConnectionHelper::Offline)
-    , m_netman(NetworkManagerFactory::createInstance())
+    , m_netman(NetworkManager::sharedInstance())
     , m_connectionSelectorInterface(nullptr)
 {
 }
@@ -91,11 +91,14 @@ ConnectionHelper::ConnectionHelper(QObject *parent)
     : QObject(parent)
     , d_ptr(new ConnectionHelperPrivate)
 {
-    connect(&d_ptr->m_timeoutTimer, &QTimer::timeout, this, &ConnectionHelper::emitFailureIfNeeded);
+    connect(&d_ptr->m_timeoutTimer, &QTimer::timeout,
+            this, &ConnectionHelper::emitFailureIfNeeded);
     d_ptr->m_timeoutTimer.setSingleShot(true);
 
-    connect(d_ptr->m_netman, &NetworkManager::availabilityChanged, this, &ConnectionHelper::connmanAvailableChanged);
-    connect(d_ptr->m_netman, &NetworkManager::stateChanged, this, &ConnectionHelper::networkStateChanged);
+    connect(d_ptr->m_netman.data(), &NetworkManager::availabilityChanged,
+            this, &ConnectionHelper::connmanAvailableChanged);
+    connect(d_ptr->m_netman.data(), &NetworkManager::stateChanged,
+            this, &ConnectionHelper::networkStateChanged);
 
     if (d_ptr->m_netman->defaultRoute()) {
         if (d_ptr->m_netman->defaultRoute()->state() == "online") {
