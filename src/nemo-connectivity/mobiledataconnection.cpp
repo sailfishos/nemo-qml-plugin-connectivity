@@ -53,7 +53,7 @@ MobileDataConnectionPrivate::MobileDataConnectionPrivate(MobileDataConnection *q
     , q(q)
     , modemManager(QOfonoExtModemManager::instance())
     , simManager(q)
-    , networkManager(q)
+    , networkManager(NetworkManager::sharedInstance())
     , networkService(new NetworkService(q))
     , networkTechnology(nullptr)
     , networkRegistration(q)
@@ -173,7 +173,7 @@ void MobileDataConnectionPrivate::updateTechnology()
     bool oldPowered = false;
     bool initializing = true;
 
-    newTech = networkManager.getTechnology(technologyPath);
+    newTech = networkManager->getTechnology(technologyPath);
 
     qCDebug(CONNECTIVITY, "####### update technology from %p to %p", networkTechnology, newTech);
 
@@ -240,7 +240,7 @@ QString MobileDataConnectionPrivate::servicePathForContext()
         return QString();
     }
 
-    QStringList cellularServices = networkManager.servicesList(QLatin1String("cellular"));
+    QStringList cellularServices = networkManager->servicesList(QLatin1String("cellular"));
     if (cellularServices.isEmpty()) {
         return QString();
     }
@@ -415,26 +415,26 @@ MobileDataConnection::MobileDataConnection()
         d_ptr->updateServiceProviderName();
     });
 
-    QObject::connect(&d_ptr->networkManager, &NetworkManager::technologiesChanged, this, [=]() {
+    QObject::connect(d_ptr->networkManager.data(), &NetworkManager::technologiesChanged, this, [=]() {
         qCDebug(CONNECTIVITY) << "NetworkManager::technologiesChanged";
         d_ptr->updateServiceAndTechnology();
     });
 
-    QObject::connect(&d_ptr->networkManager, &NetworkManager::availabilityChanged, this, [=]() {
+    QObject::connect(d_ptr->networkManager.data(), &NetworkManager::availabilityChanged, this, [=]() {
         qCDebug(CONNECTIVITY) << "NetworkManager::availabilityChanged auto service:" << d_ptr->networkService->autoConnect()
                               << "pending auto connect:" << d_ptr->autoConnectPending
                               << "d_ptr auto connect: " << d_ptr->autoConnect;
         d_ptr->updateServiceAndTechnology();
     });
 
-    QObject::connect(&d_ptr->networkManager, &NetworkManager::cellularServicesChanged, this, [=]() {
+    QObject::connect(d_ptr->networkManager.data(), &NetworkManager::cellularServicesChanged, this, [=]() {
         qCDebug(CONNECTIVITY) << "NetworkManager::servicesChanged auto service:" << d_ptr->networkService->autoConnect()
                               << "pending auto connect:" << d_ptr->autoConnectPending
                               << "d_ptr auto connect: " << d_ptr->autoConnect;
         d_ptr->updateServiceAndTechnology();
     });
 
-    QObject::connect(&d_ptr->networkManager, &NetworkManager::offlineModeChanged,
+    QObject::connect(d_ptr->networkManager.data(), &NetworkManager::offlineModeChanged,
             this, &MobileDataConnection::offlineModeChanged);
 
     QObject::connect(d_ptr->networkService, &NetworkService::errorChanged, this, [=](const QString &error) {
@@ -692,7 +692,7 @@ QString MobileDataConnection::error() const
 bool MobileDataConnection::offlineMode() const
 {
     Q_D(const MobileDataConnection);
-    return d->networkManager.offlineMode();
+    return d->networkManager->offlineMode();
 }
 
 bool MobileDataConnection::roamingAllowed() const
