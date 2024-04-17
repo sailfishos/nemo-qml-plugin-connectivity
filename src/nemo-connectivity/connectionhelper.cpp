@@ -101,9 +101,9 @@ ConnectionHelper::ConnectionHelper(QObject *parent)
             this, &ConnectionHelper::networkStateChanged);
 
     if (d_ptr->m_netman->defaultRoute()) {
-        if (d_ptr->m_netman->defaultRoute()->state() == "online") {
+        if (d_ptr->m_netman->defaultRoute()->serviceState() == NetworkService::OnlineState) {
             updateStatus(ConnectionHelper::Online);
-        } else if (d_ptr->m_netman->defaultRoute()->state() == "ready") {
+        } else if (d_ptr->m_netman->defaultRoute()->serviceState() == NetworkService::ReadyState) {
             updateStatus(ConnectionHelper::Connected);
         }
     }
@@ -244,7 +244,7 @@ void ConnectionHelper::_attemptToConnectNetwork(bool explicitAttempt)
 
     if (!d_ptr->m_netman->defaultRoute()) {
         emitFailureIfNeeded();
-    } else if (d_ptr->m_netman->defaultRoute()->state() == "online") {
+    } else if (d_ptr->m_netman->defaultRoute()->serviceState() == NetworkService::OnlineState) {
         // we are online and connman's online check has passed. Everything is ok
         handleNetworkEstablished();
     } else if (explicitAttempt) {
@@ -253,7 +253,7 @@ void ConnectionHelper::_attemptToConnectNetwork(bool explicitAttempt)
         // we do this to avoid performing a network request which might have
         // significant latency, in the "explicit" (i.e. UI triggered) case.
         openConnectionDialog();
-    } else if (d_ptr->m_netman->defaultRoute()->state() == "ready") {
+    } else if (d_ptr->m_netman->defaultRoute()->serviceState() == NetworkService::ReadyState) {
         // we already have an open session, but something isn't quite right.  Ensure that the
         // connection is usable (not blocked by a Captive Portal).
         performRequest();
@@ -374,7 +374,8 @@ void ConnectionHelper::handleConnectionSelectorClosed(bool connectionSelected)
     if (!connectionSelected) {
         // canceled
         handleNetworkUnavailable();
-    } else if (!d_ptr->m_netman->defaultRoute() || d_ptr->m_netman->defaultRoute()->state() != "online") {
+    } else if (!d_ptr->m_netman->defaultRoute()
+               || d_ptr->m_netman->defaultRoute()->serviceState() != NetworkService::OnlineState) {
         // perform a status request in case we are behind a captive portal
         QMetaObject::invokeMethod(this, "performRequest", Qt::QueuedConnection);
     }
