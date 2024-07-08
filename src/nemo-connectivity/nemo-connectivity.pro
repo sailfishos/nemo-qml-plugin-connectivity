@@ -8,7 +8,13 @@ CONFIG += \
         create_prl \
         no_install_prl
 
-QT = dbus network qml xmlpatterns
+QT = dbus network qml
+
+lessThan(QT_MAJOR_VERSION, 6) {
+    QT += xmlpatterns
+} else {
+    QT += xml
+}
 
 INCLUDEPATH += ..
 
