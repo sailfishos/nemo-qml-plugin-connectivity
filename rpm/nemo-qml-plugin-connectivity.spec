@@ -5,7 +5,7 @@ Release:    1
 License:    BSD
 URL:        https://github.com/sailfishos/nemo-qml-plugin-connectivity/
 Source0:    %{name}-%{version}.tar.bz2
-Requires:   connman >= 1.32+git150
+Requires:   connman >= 1.38
 Requires:   connman-qt5 >= 1.2.10
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Network)
