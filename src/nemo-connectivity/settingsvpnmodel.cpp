@@ -635,7 +635,9 @@ QVariantMap SettingsVpnModel::processProvisioningFile(const QString &path, const
             }
         } else if (type == QStringLiteral("pptp")) {
             rv = processPbkProvisioningFile(provisioningFile, type);
-        } else {
+        } else if (type == QStringLiteral("wireguard")) {
+            rv = processWireGuardProvisioningFile(provisioningFile);
+        } else{
             qWarning() << "Provisioning not currently supported for VPN type:" << type;
         }
     } else {
@@ -1410,6 +1412,64 @@ QVariantMap SettingsVpnModel::processPbkProvisioningFile(QFile &provisioningFile
 
         settings.endGroup();
     }
+
+    return rv;
+}
+
+QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(QFile &provisioningFile)
+{
+    QString provisioningFileName = provisioningFile.fileName();
+    QSettings settings(provisioningFileName, QSettings::IniFormat);
+    QStringList groups = settings.childGroups();
+    QVariantMap rv;
+    bool peerDone = false;
+
+    for (const auto &group : groups) {
+        settings.beginGroup(group);
+
+        if (group == QStringLiteral("Interface")) {
+            if (settings.contains("PrivateKey"))
+                rv.insert(QStringLiteral("WireGuard.PrivateKey"), settings.value(QStringLiteral("PrivateKey")));
+
+            /* Optionals */
+            if (settings.contains(QStringLiteral("ListenPort")))
+                rv.insert(QStringLiteral("WireGuard.ListenPort"), settings.value(QStringLiteral("ListenPort")));
+            if (settings.contains(QStringLiteral("DNS")))
+                rv.insert(QStringLiteral("WireGuard.DNS"), settings.value(QStringLiteral("DNS")));
+
+            /* Not used yet, keep for later */
+            //if (settings.contains("FwMark"))
+                //rv.insert(QStringLiteral("WireGuard.FwMark")), settings.value(QStringLiteral("FwMark"));
+        } else if (group == QStringLiteral("Peer") && !peerDone) {
+            if (settings.contains("PublicKey"))
+                rv.insert(QStringLiteral("WireGuard.PublicKey"), settings.value(QStringLiteral("PublicKey")));
+
+            /* Optionals */
+            if (settings.contains(QStringLiteral("PresharedKey")))
+                rv.insert(QStringLiteral("WireGuard.PresharedKey"), settings.value(QStringLiteral("PresharedKey")));
+            if (settings.contains(QStringLiteral("AllowedIPs")))
+                rv.insert(QStringLiteral("WireGuard.AllowedIPs"), settings.value(QStringLiteral("AllowedIPs")));
+            if (settings.contains(QStringLiteral("PersistentKeepalive")))
+                rv.insert(QStringLiteral("WireGuard.PersistentKeepalive"), settings.value(QStringLiteral("PersistentKeepalive")));
+
+            if (settings.contains(QStringLiteral("Endpoint"))) {
+                QStringList endpoint = settings.value(QStringLiteral("Endpoint")).toString().split(u':');
+                rv.insert(QStringLiteral("Host"), QString(endpoint[0]));
+                if (endpoint.size() == 2)
+                    rv.insert(QStringLiteral("WireGuard.EndpointPort"), QString(endpoint[1]));
+                else // No port, use default
+                    rv.insert(QStringLiteral("WireGuard.EndpointPort"), QStringLiteral("51820"));
+            }
+
+            /* ConnMan as of now supports only one peer settings */
+            peerDone = true;
+        }
+
+        settings.endGroup();
+    }
+
+    /* No name in the WireGuard config, use filename */
+    rv.insert(QStringLiteral("Name"), QFileInfo(provisioningFile).baseName());
 
     return rv;
 }
