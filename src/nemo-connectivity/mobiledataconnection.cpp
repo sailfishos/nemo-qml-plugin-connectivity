@@ -134,8 +134,9 @@ void MobileDataConnectionPrivate::updateStatus()
 void MobileDataConnectionPrivate::updateNetworkServicePath()
 {
     bool simMgrValid = isSimManagerValid();
-    qCDebug(CONNECTIVITY()) << "MobileDataConnection update network service path:" << simManager.isValid() << simManager.present()
-                            << simManagerValid << "auto connect service:" << networkService->autoConnect()
+    qCDebug(CONNECTIVITY()) << "MobileDataConnection update network service path:" << simManager.isValid()
+                            << simManager.present() << simManagerValid
+                            << "auto connect service:" << networkService->autoConnect()
                             << "pending auto connect:" << autoConnectPending
                             << "d_ptr->autoConnect: " << autoConnect;
     if (simMgrValid != simManagerValid) {
@@ -298,7 +299,8 @@ void MobileDataConnectionPrivate::createDataContext(const QString &modemPath)
         }
     });
 
-    QObject::connect(connectionContext, &QOfonoConnectionContext::contextPathChanged, q, [=](const QString &contextPath) {
+    QObject::connect(connectionContext, &QOfonoConnectionContext::contextPathChanged,
+                     q, [=](const QString &contextPath) {
         qCDebug(CONNECTIVITY) << "QOfonoConnectionContext contextPathChanged"
                               << "auto connnect service:" << networkService->autoConnect()
                               << "pending auto connect:" << autoConnectPending

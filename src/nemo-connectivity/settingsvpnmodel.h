@@ -100,8 +100,8 @@ private:
     QVariantMap processVpncProvisioningFile(QFile &provisioningFile);
     bool processPppdProvisioningFile(QFile &provisioningFile, QVariantMap &result);
     QVariantMap processL2tpProvisioningFile(QFile &provisioningFile);
-    QVariantMap processPbkProvisioningFile(QFile &provisioningFile, const QString type);
-    QVariantMap processWireGuardProvisioningFile(QFile &provisioningFile);
+    QVariantMap processPbkProvisioningFile(QFile &provisioningFile, const QString &type);
+    QVariantMap processWireGuardProvisioningFile(const QFile &provisioningFile);
     void updateBestState(VpnConnection::ConnectionState maxState);
 
 private Q_SLOTS:
