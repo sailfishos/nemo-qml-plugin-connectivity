@@ -106,14 +106,6 @@ Module {
             Parameter { name: "path"; type: "string" }
         }
         Method {
-            name: "activateConnection"
-            Parameter { name: "path"; type: "string" }
-        }
-        Method {
-            name: "deactivateConnection"
-            Parameter { name: "path"; type: "string" }
-        }
-        Method {
             name: "connectionCredentials"
             type: "QVariantMap"
             Parameter { name: "path"; type: "string" }
