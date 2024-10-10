@@ -241,16 +241,6 @@ void SettingsVpnModel::deleteConnection(const QString &path)
 
 }
 
-void SettingsVpnModel::activateConnection(const QString &path)
-{
-    vpnManager()->activateConnection(path);
-}
-
-void SettingsVpnModel::deactivateConnection(const QString &path)
-{
-    vpnManager()->deactivateConnection(path);
-}
-
 VpnConnection *SettingsVpnModel::get(int index) const
 {
     if (index >= 0 && index < connections().size()) {

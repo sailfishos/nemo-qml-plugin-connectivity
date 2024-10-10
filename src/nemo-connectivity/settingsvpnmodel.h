@@ -70,9 +70,6 @@ public:
     Q_INVOKABLE void modifyConnection(const QString &path, const QVariantMap &properties);
     Q_INVOKABLE void deleteConnection(const QString &path);
 
-    Q_INVOKABLE void activateConnection(const QString &path);
-    Q_INVOKABLE void deactivateConnection(const QString &path);
-
     Q_INVOKABLE QVariantMap connectionCredentials(const QString &path);
     Q_INVOKABLE void setConnectionCredentials(const QString &path, const QVariantMap &credentials);
 
