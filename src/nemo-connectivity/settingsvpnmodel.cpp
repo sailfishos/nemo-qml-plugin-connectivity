@@ -1426,6 +1426,8 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(QFile &provisioni
                 rv.insert(QStringLiteral("WireGuard.ListenPort"), settings.value(QStringLiteral("ListenPort")));
             if (settings.contains(QStringLiteral("DNS")))
                 rv.insert(QStringLiteral("WireGuard.DNS"), settings.value(QStringLiteral("DNS")));
+            if (settings.contains(QStringLiteral("Address")))
+                rv.insert(QStringLiteral("WireGuard.Address"), settings.value(QStringLiteral("Address")));
 
             /* Not used yet, keep for later */
             //if (settings.contains("FwMark"))
