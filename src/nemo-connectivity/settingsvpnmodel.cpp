@@ -66,7 +66,8 @@ int numericValue(VpnConnection::ConnectionState state)
     }
 }
 
-VpnConnection::ConnectionState getMaxState(VpnConnection::ConnectionState newState, VpnConnection::ConnectionState oldState)
+VpnConnection::ConnectionState getMaxState(VpnConnection::ConnectionState newState,
+                                           VpnConnection::ConnectionState oldState)
 {
     if (numericValue(newState) > numericValue(oldState)) {
         return newState;
@@ -79,20 +80,25 @@ VpnConnection::ConnectionState getMaxState(VpnConnection::ConnectionState newSta
 
 SettingsVpnModel::SettingsVpnModel(QObject* parent)
     : VpnModel(parent)
-    , credentials_(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QStringLiteral("/system/privileged/vpn-data"))
+    , credentials_(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)
+                   + QStringLiteral("/system/privileged/vpn-data"))
     , bestState_(VpnConnection::Idle)
     , autoConnect_(false)
     , orderByConnected_(true)
-    , provisioningOutputPath_(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QStringLiteral("/system/privileged/vpn-provisioning"))
+    , provisioningOutputPath_(QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation)
+                              + QStringLiteral("/system/privileged/vpn-provisioning"))
     , roles(VpnModel::roleNames())
 {
     VpnManager *manager = vpnManager();
 
     roles.insert(ConnectedRole, "connected");
 
-    connect(manager, &VpnManager::connectionAdded, this, &SettingsVpnModel::connectionAdded, Qt::UniqueConnection);
-    connect(manager, &VpnManager::connectionRemoved, this, &SettingsVpnModel::connectionRemoved, Qt::UniqueConnection);
-    connect(manager, &VpnManager::connectionsRefreshed, this, &SettingsVpnModel::connectionsRefreshed, Qt::UniqueConnection);
+    connect(manager, &VpnManager::connectionAdded,
+            this, &SettingsVpnModel::connectionAdded, Qt::UniqueConnection);
+    connect(manager, &VpnManager::connectionRemoved,
+            this, &SettingsVpnModel::connectionRemoved, Qt::UniqueConnection);
+    connect(manager, &VpnManager::connectionsRefreshed,
+            this, &SettingsVpnModel::connectionsRefreshed, Qt::UniqueConnection);
 }
 
 SettingsVpnModel::~SettingsVpnModel()
@@ -205,7 +211,9 @@ void SettingsVpnModel::deleteConnection(const QString &path)
         if (conn->type() == QStringLiteral("openvpn")) {
             QVariantMap providerProperties = conn->providerProperties();
             QStringList fileProperties;
-            fileProperties << QStringLiteral("OpenVPN.Cert") << QStringLiteral("OpenVPN.Key") << QStringLiteral("OpenVPN.CACert") << QStringLiteral("OpenVPN.ConfigFile");
+            fileProperties << QStringLiteral("OpenVPN.Cert") << QStringLiteral("OpenVPN.Key")
+                           << QStringLiteral("OpenVPN.CACert") << QStringLiteral("OpenVPN.ConfigFile");
+
             for (const QString property : fileProperties) {
                 const QString filename = providerProperties.value(property).toString();
 
@@ -318,9 +326,12 @@ void SettingsVpnModel::connectionAdded(const QString &path)
         bool credentialsExist = credentials_.credentialsExist(CredentialsRepository::locationForObjectPath(path));
         conn->setStoreCredentials(credentialsExist);
 
-        connect(conn, &VpnConnection::nameChanged, this, &SettingsVpnModel::updatedConnectionPosition, Qt::UniqueConnection);
-        connect(conn, &VpnConnection::connectedChanged, this, &SettingsVpnModel::connectedChanged, Qt::UniqueConnection);
-        connect(conn, &VpnConnection::stateChanged, this, &SettingsVpnModel::stateChanged, Qt::UniqueConnection);
+        connect(conn, &VpnConnection::nameChanged,
+                this, &SettingsVpnModel::updatedConnectionPosition, Qt::UniqueConnection);
+        connect(conn, &VpnConnection::connectedChanged,
+                this, &SettingsVpnModel::connectedChanged, Qt::UniqueConnection);
+        connect(conn, &VpnConnection::stateChanged,
+                this, &SettingsVpnModel::stateChanged, Qt::UniqueConnection);
     }
 }
 
@@ -340,9 +351,12 @@ void SettingsVpnModel::connectionsRefreshed()
     // Check to see if the best state has changed
     VpnConnection::ConnectionState maxState = VpnConnection::Idle;
     for (VpnConnection *conn : connections) {
-        connect(conn, &VpnConnection::nameChanged, this, &SettingsVpnModel::updatedConnectionPosition, Qt::UniqueConnection);
-        connect(conn, &VpnConnection::connectedChanged, this, &SettingsVpnModel::connectedChanged, Qt::UniqueConnection);
-        connect(conn, &VpnConnection::stateChanged, this, &SettingsVpnModel::stateChanged, Qt::UniqueConnection);
+        connect(conn, &VpnConnection::nameChanged,
+                this, &SettingsVpnModel::updatedConnectionPosition, Qt::UniqueConnection);
+        connect(conn, &VpnConnection::connectedChanged,
+                this, &SettingsVpnModel::connectedChanged, Qt::UniqueConnection);
+        connect(conn, &VpnConnection::stateChanged,
+                this, &SettingsVpnModel::stateChanged, Qt::UniqueConnection);
 
         maxState = getMaxState(conn->state(), maxState);
     }
@@ -512,7 +526,10 @@ bool SettingsVpnModel::CredentialsRepository::storeCredentials(const QString &lo
         return false;
     } else {
         credentialsFile.write(encodeCredentials(credentials));
-        credentialsFile.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ReadOther | QFileDevice::WriteOther);
+        credentialsFile.setPermissions(QFileDevice::ReadOwner
+                                       | QFileDevice::WriteOwner
+                                       | QFileDevice::ReadOther
+                                       | QFileDevice::WriteOther);
         credentialsFile.close();
     }
 
@@ -679,13 +696,16 @@ QVariantMap SettingsVpnModel::processOpenVpnProvisioningFile(QFile &provisioning
                     qWarning() << "Ignoring empty embedded content:" << embeddedMarker;
                 } else {
                     if (embeddedMarker == QStringLiteral("connection")) {
-                        // Special case: not embedded content, but a <connection> structure - pass through as an extra option
-                        extraOptions.append(QStringLiteral("<connection>\n") + embeddedContent + QStringLiteral("</connection>"));
+                        // Special case: not embedded content, but a <connection> structure
+                        // - pass through as an extra option
+                        extraOptions.append(QStringLiteral("<connection>\n") + embeddedContent
+                                            + QStringLiteral("</connection>"));
                     } else {
                         // Embedded content
                         QDir outputDir(provisioningOutputPath_);
                         if (!outputDir.exists() && !outputDir.mkpath(provisioningOutputPath_)) {
-                            qWarning() << "Unable to create base directory for VPN provisioning content:" << provisioningOutputPath_;
+                            qWarning() << "Unable to create base directory for VPN provisioning content:"
+                                       << provisioningOutputPath_;
                         } else {
                             // Name the file according to content
                             QCryptographicHash hash(QCryptographicHash::Sha1);
@@ -1371,7 +1391,7 @@ QVariantMap SettingsVpnModel::processL2tpProvisioningFile(QFile &provisioningFil
     return rv;
 }
 
-QVariantMap SettingsVpnModel::processPbkProvisioningFile(QFile &provisioningFile, const QString type)
+QVariantMap SettingsVpnModel::processPbkProvisioningFile(QFile &provisioningFile, const QString &type)
 {
     QString provisioningFileName = provisioningFile.fileName();
     QSettings settings(provisioningFileName, QSettings::IniFormat);
@@ -1406,7 +1426,7 @@ QVariantMap SettingsVpnModel::processPbkProvisioningFile(QFile &provisioningFile
     return rv;
 }
 
-QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(QFile &provisioningFile)
+QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(const QFile &provisioningFile)
 {
     QString provisioningFileName = provisioningFile.fileName();
     QSettings settings(provisioningFileName, QSettings::IniFormat);
@@ -1442,7 +1462,8 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(QFile &provisioni
             if (settings.contains(QStringLiteral("AllowedIPs")))
                 rv.insert(QStringLiteral("WireGuard.AllowedIPs"), settings.value(QStringLiteral("AllowedIPs")));
             if (settings.contains(QStringLiteral("PersistentKeepalive")))
-                rv.insert(QStringLiteral("WireGuard.PersistentKeepalive"), settings.value(QStringLiteral("PersistentKeepalive")));
+                rv.insert(QStringLiteral("WireGuard.PersistentKeepalive"),
+                          settings.value(QStringLiteral("PersistentKeepalive")));
 
             if (settings.contains(QStringLiteral("Endpoint"))) {
                 QStringList endpoint = settings.value(QStringLiteral("Endpoint")).toString().split(u':');

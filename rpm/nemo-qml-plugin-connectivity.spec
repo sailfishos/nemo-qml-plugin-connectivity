@@ -35,13 +35,18 @@ Requires:   pkgconfig(qofono-qt5)
 
 %build
 %qmake5 "VERSION=%{version}"
-make %{?_smp_mflags}
+%make_build
 
 %install
 %qmake5_install
 
+%post
+/sbin/ldconfig || :
+
+%postun
+/sbin/ldconfig || :
+
 %files
-%defattr(-,root,root,-)
 %license LICENSE.BSD
 %dir %{_libdir}/qt5/qml/Nemo/Connectivity
 %{_libdir}/qt5/qml/Nemo/Connectivity/libnemoconnectivity.so
@@ -52,14 +57,7 @@ make %{?_smp_mflags}
 %{_libdir}/libnemoconnectivity.so.*
 
 %files devel
-%defattr(-,root,root,-)
 %dir %{_includedir}/nemo-connectivity
 %{_includedir}/nemo-connectivity/*.h
 %{_libdir}/libnemoconnectivity.so
 %{_libdir}/pkgconfig/nemoconnectivity.pc
-
-%post
-/sbin/ldconfig || :
-
-%postun
-/sbin/ldconfig || :
