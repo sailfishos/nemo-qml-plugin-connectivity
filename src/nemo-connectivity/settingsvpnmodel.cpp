@@ -1447,7 +1447,8 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(const QFile &prov
             if (settings.contains(QStringLiteral("DNS")))
                 rv.insert(QStringLiteral("WireGuard.DNS"), settings.value(QStringLiteral("DNS")));
             if (settings.contains(QStringLiteral("Address")))
-                rv.insert(QStringLiteral("WireGuard.Address"), settings.value(QStringLiteral("Address")));
+                rv.insert(QStringLiteral("WireGuard.Address"),
+                        settings.value(QStringLiteral("Address")).toStringList().join(","));
 
             /* Not used yet, keep for later */
             //if (settings.contains("FwMark"))
@@ -1460,7 +1461,8 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(const QFile &prov
             if (settings.contains(QStringLiteral("PresharedKey")))
                 rv.insert(QStringLiteral("WireGuard.PresharedKey"), settings.value(QStringLiteral("PresharedKey")));
             if (settings.contains(QStringLiteral("AllowedIPs")))
-                rv.insert(QStringLiteral("WireGuard.AllowedIPs"), settings.value(QStringLiteral("AllowedIPs")));
+                rv.insert(QStringLiteral("WireGuard.AllowedIPs"),
+                        settings.value(QStringLiteral("AllowedIPs")).toStringList().join(","));
             if (settings.contains(QStringLiteral("PersistentKeepalive")))
                 rv.insert(QStringLiteral("WireGuard.PersistentKeepalive"),
                           settings.value(QStringLiteral("PersistentKeepalive")));
