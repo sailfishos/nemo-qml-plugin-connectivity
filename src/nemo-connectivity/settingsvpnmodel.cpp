@@ -36,8 +36,12 @@
 #include <QCryptographicHash>
 #include <QQmlEngine>
 #include <QDir>
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
 #include <QXmlQuery>
 #include <QXmlResultItems>
+#else
+#include <QDomDocument>
+#endif
 #include <QSettings>
 #include <QLoggingCategory>
 
@@ -740,7 +744,11 @@ QVariantMap SettingsVpnModel::processOpenVpnProvisioningFile(QFile &provisioning
         } else if (!embeddedMarker.isEmpty()) {
             embeddedContent.append(line + QStringLiteral("\n"));
         } else {
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
             QStringList tokens(line.split(whitespace, QString::SkipEmptyParts));
+#else
+            QStringList tokens(line.split(whitespace, Qt::SkipEmptyParts));
+#endif
             if (!tokens.isEmpty()) {
                 // Find directives that become part of the connman configuration
                 const QString& directive(tokens.front());
@@ -900,7 +908,11 @@ QVariantMap SettingsVpnModel::processOpenVpnProvisioningFile(QFile &provisioning
             } else {
                 QTextStream os(&outputFile);
                 foreach (const QString &line, extraOptions) {
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
                     os << line << endl;
+#else
+                    os << line << Qt::endl;
+#endif
                 }
 
                 rv.insert(QStringLiteral("OpenVPN.ConfigFile"), outputFile.fileName());
@@ -1004,6 +1016,7 @@ QVariantMap SettingsVpnModel::processOpenconnectProvisioningFile(QFile &provisio
 
     if (first == '<') {
 #define NS "declare default element namespace \"http://schemas.xmlsoap.org/encoding/\"; "
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
         QXmlQuery query;
         QXmlResultItems entries;
 
@@ -1044,6 +1057,34 @@ QVariantMap SettingsVpnModel::processOpenconnectProvisioningFile(QFile &provisio
                 rv.insert(QStringLiteral("OpenConnect.Usergroup"), userGroup[0]);
             }
         }
+#else
+        QDomDocument config("config");
+        if(!provisioningFile.open(QIODevice::ReadOnly)) {
+            return QVariantMap();
+        }
+
+        if(!config.setContent(&provisioningFile)) {
+            provisioningFile.close();
+            return QVariantMap();
+        }
+        QDomElement configElement = config.documentElement();
+        QDomNode configNode = configElement.firstChild();
+        while(!configNode.isNull()) {
+            QDomElement element = configNode.toElement();
+            if(!element.isNull()) {
+                if(element.tagName() == "Name") {
+                    rv.insert("Name", element.text());
+                }
+                if(element.tagName() == "Host") {
+                    rv.insert("Host", element.text());
+                }
+                if(element.tagName() == "OpenConnect.Usergroup") {
+                    rv.insert("OpenConnect.Usergroup", element.text());
+                }
+            }
+            configNode.nextSibling();
+        }
+#endif
     } else {
         struct ArgMapping {
             bool hasArgument;
@@ -1137,6 +1178,7 @@ QVariantMap SettingsVpnModel::processOpenfortivpnProvisioningFile(QFile &provisi
     }
 
     if (first == '<') {
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
         QXmlQuery query;
         QXmlResultItems entries;
 
@@ -1195,7 +1237,34 @@ QVariantMap SettingsVpnModel::processOpenfortivpnProvisioningFile(QFile &provisi
         if (option[0] == QLatin1String("0")) {
             rv.insert(QStringLiteral("openfortivpn.AllowSelfSignedCert"), QStringLiteral("true"));
         }
+#else
+        QDomDocument config("config");
+        if(!provisioningFile.open(QIODevice::ReadOnly)) {
+            return QVariantMap();
+        }
 
+        if(!config.setContent(&provisioningFile)) {
+            provisioningFile.close();
+            return QVariantMap();
+        }
+        QDomElement configElement = config.documentElement();
+        QDomNode configNode = configElement.firstChild();
+        while(!configNode.isNull()) {
+            QDomElement element = configNode.toElement();
+            if(!element.isNull()) {
+                if(element.tagName() == "Name") {
+                    rv.insert("Name", element.text());
+                }
+                if(element.tagName() == "Host") {
+                    rv.insert("Host", element.text());
+                }
+                if(element.tagName() == "openfortivpn.Port") {
+                    rv.insert("openfortivpn.Port", element.text());
+                }
+            }
+            configNode.nextSibling();
+        }
+#endif
     } else {
         QTextStream is(&provisioningFile);
 
