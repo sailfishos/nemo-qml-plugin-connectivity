@@ -71,6 +71,7 @@ public:
     bool online() const;
 
     enum Status {
+        Unknown = -1,
         Offline = 0,
         Connecting,
         Connected,

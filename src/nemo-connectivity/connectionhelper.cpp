@@ -79,7 +79,7 @@ ConnectionHelperPrivate::ConnectionHelperPrivate()
     , m_detectingNetworkConnection(false)
     , m_connmanIsAvailable(false)
     , m_selectorVisible(false)
-    , m_status(Nemo::ConnectionHelper::Offline)
+    , m_status(Nemo::ConnectionHelper::Unknown)
     , m_netman(NetworkManager::sharedInstance())
     , m_connectionSelectorInterface(nullptr)
 {
