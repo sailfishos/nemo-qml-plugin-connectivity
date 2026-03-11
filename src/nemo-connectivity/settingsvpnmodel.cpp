@@ -36,10 +36,11 @@
 #include <QCryptographicHash>
 #include <QQmlEngine>
 #include <QDir>
-#include <QXmlQuery>
-#include <QXmlResultItems>
 #include <QSettings>
 #include <QLoggingCategory>
+
+#include <QXmlQuery>
+#include <QXmlResultItems>
 
 #include "vpnmanager.h"
 
@@ -214,7 +215,7 @@ void SettingsVpnModel::deleteConnection(const QString &path)
             fileProperties << QStringLiteral("OpenVPN.Cert") << QStringLiteral("OpenVPN.Key")
                            << QStringLiteral("OpenVPN.CACert") << QStringLiteral("OpenVPN.ConfigFile");
 
-            for (const QString property : fileProperties) {
+            for (const QString &property : fileProperties) {
                 const QString filename = providerProperties.value(property).toString();
 
                 // Check if the file has been provisioned
@@ -257,7 +258,7 @@ VpnConnection *SettingsVpnModel::get(int index) const
         return item;
     }
 
-    return 0;
+    return nullptr;
 
 }
 
