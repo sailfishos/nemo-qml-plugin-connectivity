@@ -16,6 +16,7 @@ Module {
         Enum {
             name: "Status"
             values: {
+                "Unknown": -1,
                 "Offline": 0,
                 "Connecting": 1,
                 "Connected": 2,
