@@ -128,7 +128,7 @@ void MobileDataConnectionPrivate::updateStatus()
     }
 
     qCDebug(CONNECTIVITY, "Update status: %d old: %d state: %s connecting service: %d %s", status, oldStatus,
-            qPrintable(state), connectingService, qPrintable(q->objectName()));
+            qPrintable(QVariant(state).toString()), connectingService, qPrintable(q->objectName()));
 }
 
 void MobileDataConnectionPrivate::updateNetworkServicePath()

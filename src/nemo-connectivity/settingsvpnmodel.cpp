@@ -38,13 +38,18 @@
 #include <QDir>
 #include <QSettings>
 #include <QLoggingCategory>
-
-#include <QXmlQuery>
-#include <QXmlResultItems>
+#include <QDomDocument>
 
 #include "vpnmanager.h"
 
 #include "settingsvpnmodel.h"
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
+namespace Qt
+{
+    static auto endl = ::endl;
+}
+#endif
 
 Q_LOGGING_CATEGORY(lcVpnLog, "qt.nemo.connectivity.vpn", QtWarningMsg)
 
@@ -741,7 +746,11 @@ QVariantMap SettingsVpnModel::processOpenVpnProvisioningFile(QFile &provisioning
         } else if (!embeddedMarker.isEmpty()) {
             embeddedContent.append(line + QStringLiteral("\n"));
         } else {
+#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
             QStringList tokens(line.split(whitespace, QString::SkipEmptyParts));
+#else
+            QStringList tokens(line.split(whitespace, Qt::SkipEmptyParts));
+#endif
             if (!tokens.isEmpty()) {
                 // Find directives that become part of the connman configuration
                 const QString& directive(tokens.front());
@@ -901,7 +910,7 @@ QVariantMap SettingsVpnModel::processOpenVpnProvisioningFile(QFile &provisioning
             } else {
                 QTextStream os(&outputFile);
                 foreach (const QString &line, extraOptions) {
-                    os << line << endl;
+                    os << line << Qt::endl;
                 }
 
                 rv.insert(QStringLiteral("OpenVPN.ConfigFile"), outputFile.fileName());
@@ -1000,50 +1009,46 @@ QVariantMap SettingsVpnModel::processOpenconnectProvisioningFile(QFile &provisio
     QVariantMap rv;
 
     if (provisioningFile.peek(&first, 1) != 1) {
-        return QVariantMap();
+        return rv;
     }
 
     if (first == '<') {
-#define NS "declare default element namespace \"http://schemas.xmlsoap.org/encoding/\"; "
-        QXmlQuery query;
-        QXmlResultItems entries;
-
-        if (!query.setFocus(&provisioningFile)) {
+        QDomDocument config("config");
+        if (!config.setContent(&provisioningFile)) {
             qWarning() << "Unable to read provisioning configuration file";
-            return QVariantMap();
+            return rv;
         }
 
-        query.setQuery(QStringLiteral(NS "/AnyConnectProfile/ServerList/HostEntry"));
-        query.evaluateTo(&entries);
-        if (!query.isValid()) {
-            qWarning() << "Unable to query provisioning configuration file";
-            return QVariantMap();
+        QDomElement configElement = config.documentElement();
+        if (configElement.tagName() != "AnyConnectProfile") {
+            qWarning() << "Provisioning file is missing the AnyConnectProfile tag";
+            return rv;
         }
 
-        for (QXmlItem entry = entries.next(); !entry.isNull(); entry = entries.next()) {
-            QXmlQuery subQuery(query.namePool());
-            QStringList name;
-            QStringList address;
-            QStringList userGroup;
-            subQuery.setFocus(entry);
-            subQuery.setQuery(QStringLiteral(NS "normalize-space(HostName[1]/text())"));
-            subQuery.evaluateTo(&name);
-            subQuery.setQuery(QStringLiteral(NS "normalize-space(HostAddress[1]/text())"));
-            subQuery.evaluateTo(&address);
-            subQuery.setQuery(QStringLiteral(NS "normalize-space(UserGroup[1]/text())"));
-            subQuery.evaluateTo(&userGroup);
+        QDomNode serverList = configElement.namedItem("ServerList");
+        if (serverList.isNull()) {
+            qWarning() << "Provisioning file is missing the ServerList tag";
+            return rv;
+        }
 
-            if (!name[0].isEmpty()) {
-                rv.insert(QStringLiteral("Name"), name[0]);
+        QDomNode hostEntry = serverList.firstChild();
+        while (!hostEntry.isNull()) {
+            QDomNode name = hostEntry.namedItem("HostName");
+            if (!name.isNull()) {
+                rv.insert("Name", name.toElement().text());
             }
 
-            if (!address[0].isEmpty()) {
-                rv.insert(QStringLiteral("Host"), address[0]);
+            QDomNode address = hostEntry.namedItem("HostAddress");
+            if (!address.isNull()) {
+                rv.insert("Host", address.toElement().text());
             }
 
-            if (!userGroup[0].isEmpty()) {
-                rv.insert(QStringLiteral("OpenConnect.Usergroup"), userGroup[0]);
+            QDomNode userGroup = hostEntry.namedItem("UserGroup");
+            if (!userGroup.isNull()) {
+                rv.insert("OpenConnect.UserGroup", userGroup.toElement().text());
             }
+
+            hostEntry = hostEntry.nextSibling();
         }
     } else {
         struct ArgMapping {
@@ -1124,7 +1129,6 @@ QVariantMap SettingsVpnModel::processOpenconnectProvisioningFile(QFile &provisio
     }
 
     return rv;
-#undef NS
 }
 
 QVariantMap SettingsVpnModel::processOpenfortivpnProvisioningFile(QFile &provisioningFile)
@@ -1134,69 +1138,80 @@ QVariantMap SettingsVpnModel::processOpenfortivpnProvisioningFile(QFile &provisi
     QStringList option;
 
     if (provisioningFile.peek(&first, 1) != 1) {
-        return QVariantMap();
+        return rv;
     }
 
     if (first == '<') {
-        QXmlQuery query;
-        QXmlResultItems entries;
-
-        if (!query.setFocus(&provisioningFile)) {
+        QDomDocument config("config");
+        if (!config.setContent(&provisioningFile)) {
             qWarning() << "Unable to read provisioning configuration file";
-            return QVariantMap();
+            return rv;
         }
 
-        query.setQuery(QStringLiteral("/forticlient_configuration/vpn/sslvpn/connections/connection"));
-        query.evaluateTo(&entries);
-        if (!query.isValid()) {
-            qWarning() << "Unable to query provisioning configuration file";
-            return QVariantMap();
+        QDomElement configElement = config.documentElement();
+        if (configElement.tagName() != "forticlient_configuration") {
+            qWarning() << "Provisioning file is missing the forticlient_configuration tag";
+            return rv;
         }
 
-        for (QXmlItem entry = entries.next(); !entry.isNull(); entry = entries.next()) {
-            QXmlQuery subQuery(query.namePool());
-            QStringList name;
-            QStringList address;
-            QStringList userGroup;
-            subQuery.setFocus(entry);
+        QDomNode vpn = configElement.namedItem("vpn"); 
+        if (vpn.isNull()) {
+            qWarning() << "Provisioning file is missing the vpn tag";
+            return rv;
+        }
 
-            // Other fields that might be of interest
-            // username
-            // password
-            // warn_invalid_server_certificate
-            subQuery.setQuery(QStringLiteral("normalize-space(name[1]/text())"));
-            subQuery.evaluateTo(&name);
-            subQuery.setQuery(QStringLiteral("normalize-space(server[1]/text())"));
-            subQuery.evaluateTo(&address);
+        QDomNode sslvpn = vpn.namedItem("sslvpn");
+        if (sslvpn.isNull()) {
+            qWarning() << "Provisioning file is missing the sslvpn tag";
+            return rv;
+        }
 
-            if (!name[0].isEmpty()) {
-                rv.insert(QStringLiteral("Name"), name[0]);
+        QDomNode connections = sslvpn.namedItem("connections");
+        if (connections.isNull()) {
+            qWarning() << "Provisioning file is missing the connections tag";
+            return rv;
+        }
+
+        QDomNode connection = connections.firstChild();
+        while (!connection.isNull()) {
+            QDomNode name = connection.namedItem("name");
+            if (!name.isNull()) {
+                rv.insert("Name", name.toElement().text());
             }
 
-            if (!address[0].isEmpty()) {
-                int pos = address[0].indexOf(':');
+            QDomNode server = connection.namedItem("server");
+            if (!server.isNull()) {
+                QString elementText = server.toElement().text();
+                int pos = elementText.indexOf(':');
                 if (pos == -1) {
-                    rv.insert(QStringLiteral("Host"), address[0]);
+                    rv.insert(QStringLiteral("Host"), elementText);
                 } else {
-                    rv.insert(QStringLiteral("Host"), address[0].left(pos));
-                    rv.insert(QStringLiteral("openfortivpn.Port"), address[0].midRef(pos + 1).toInt());
+                    rv.insert(QStringLiteral("Host"), elementText.left(pos));
+                    rv.insert(QStringLiteral("openfortivpn.Port"), elementText.mid(pos + 1).toInt());
                 }
+            }
 
-                // We have a connection address, ignore the rest.
-                break;
+            QDomNode userGroup = connection.namedItem("UserGroup");
+            if (!userGroup.isNull()) {
+                rv.insert("OpenConnect.UserGroup", userGroup.toElement().text());
+            }
+
+            connection = connection.nextSibling();
+        }
+
+        QDomNode vpnOptions = sslvpn.namedItem("options");
+        if (!vpnOptions.isNull()) {
+            QDomNode optionDisallowInvalidServerCertificate = vpnOptions.namedItem("disallow_invalid_server_certificate");
+
+            if (!optionDisallowInvalidServerCertificate.isNull()) {
+                QDomElement element = optionDisallowInvalidServerCertificate.toElement();
+                QString optionText = element.text();
+
+                if (optionText == QLatin1String("0")) {
+                    rv.insert(QStringLiteral("openfortivpn.AllowSelfSignedCert"), QStringLiteral("true"));
+                }
             }
         }
-
-        // There's also other boolean (1/0) options under sslvpn/options:
-        // preferred_dtls_tunnel
-        // no_dhcp_server_route
-        // keep_connection_alive
-        query.setQuery(QStringLiteral("normalize-space(/forticlient_configuration/vpn/sslvpn/options/disallow_invalid_server_certificate/text())"));
-        query.evaluateTo(&option);
-        if (option[0] == QLatin1String("0")) {
-            rv.insert(QStringLiteral("openfortivpn.AllowSelfSignedCert"), QStringLiteral("true"));
-        }
-
     } else {
         QTextStream is(&provisioningFile);
 
