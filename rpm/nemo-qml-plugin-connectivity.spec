@@ -1,6 +1,6 @@
 Name:       nemo-qml-plugin-connectivity
 Summary:    Connectivity plugin for Sailfish OS
-Version:    0.2.11
+Version:    0.3.1
 Release:    1
 License:    BSD
 URL:        https://github.com/sailfishos/nemo-qml-plugin-connectivity/
@@ -11,6 +11,7 @@ BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  pkgconfig(Qt5Network)
 BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(Qt5DBus)
+BuildRequires:  pkgconfig(Qt5Xml)
 BuildRequires:  pkgconfig(connman-qt5) >= 1.2.16
 BuildRequires:  pkgconfig(qofonoext)
 BuildRequires:  pkgconfig(qofono-qt5)
