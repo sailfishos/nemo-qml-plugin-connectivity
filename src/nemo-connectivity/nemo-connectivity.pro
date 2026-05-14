@@ -8,7 +8,7 @@ CONFIG += \
         create_prl \
         no_install_prl
 
-QT = dbus network qml xmlpatterns
+QT = dbus network qml xml
 
 INCLUDEPATH += ..
 
@@ -16,8 +16,13 @@ DEFINES += NEMO_BUILD_CONNECTIVITY_LIBRARY
 
 PKGCONFIG += \
     connman-qt$${QT_MAJOR_VERSION} \
-    qofonoext \
     qofono-qt$${QT_MAJOR_VERSION}
+
+lessThan(QT_MAJOR_VERSION, 6) {
+        PKGCONFIG += qofonoext
+} else {
+        PKGCONFIG += qofonoext-qt$${QT_MAJOR_VERSION}
+}
 
 SOURCES += \
         connectionhelper.cpp \
@@ -44,7 +49,7 @@ QMAKE_PKGCONFIG_LIBDIR = $$target.path
 QMAKE_PKGCONFIG_INCDIR = $$public_headers.path
 QMAKE_PKGCONFIG_DESTDIR = pkgconfig
 QMAKE_PKGCONFIG_VERSION = $$VERSION
-QMAKE_PKGCONFIG_REQUIRES = Qt5Core Qt5DBus connman-qt$${QT_MAJOR_VERSION}
+QMAKE_PKGCONFIG_REQUIRES = Qt$${QT_MAJOR_VERSION}Core Qt$${QT_MAJOR_VERSION}DBus connman-qt$${QT_MAJOR_VERSION}
 
 INSTALLS += \
         public_headers \
