@@ -107,12 +107,12 @@ private:
     void updateBestState(VpnConnection::ConnectionState maxState);
 
 private Q_SLOTS:
-    void connectionAdded(const QString &path);
-    void connectionRemoved(const QString &path);
-    void connectionsRefreshed();
-    void updatedConnectionPosition();
-    void connectedChanged();
-    void stateChanged();
+    void onConnectionAdded(const QString &path);
+    void onConnectionRemoved(const QString &path);
+    void onConnectionsRefreshed();
+    void updateConnectionPosition();
+    void onConnectedChanged();
+    void onStateChanged();
 
 private:
     class CredentialsRepository
