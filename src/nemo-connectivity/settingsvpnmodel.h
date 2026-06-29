@@ -105,6 +105,7 @@ private:
     QVariantMap processPbkProvisioningFile(QFile &provisioningFile, const QString &type);
     QVariantMap processWireGuardProvisioningFile(const QFile &provisioningFile);
     void updateBestState(VpnConnection::ConnectionState maxState);
+    void trackConnection(VpnConnection *connection);
 
 private Q_SLOTS:
     void onConnectionAdded(const QString &path);
@@ -113,6 +114,7 @@ private Q_SLOTS:
     void updateConnectionPosition();
     void onConnectedChanged();
     void onStateChanged();
+    void updateAutoConnect();
 
 private:
     class CredentialsRepository
