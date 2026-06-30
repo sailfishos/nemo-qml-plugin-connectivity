@@ -44,7 +44,6 @@
 class NEMO_CONNECTIVITY_EXPORT SettingsVpnModel : public VpnModel
 {
     Q_OBJECT
-
     Q_PROPERTY(VpnConnection::ConnectionState bestState READ bestState NOTIFY bestStateChanged)
     Q_PROPERTY(bool autoConnect READ autoConnect NOTIFY autoConnectChanged)
     Q_PROPERTY(bool orderByConnected READ orderByConnected WRITE setOrderByConnected NOTIFY orderByConnectedChanged)
@@ -66,6 +65,7 @@ public:
     void setOrderByConnected(bool orderByConnected);
 
     Q_INVOKABLE static bool isDefaultDomain(const QString &domain);
+
     Q_INVOKABLE void createConnection(const QVariantMap &properties);
     Q_INVOKABLE void modifyConnection(const QString &path, const QVariantMap &properties);
     Q_INVOKABLE void deleteConnection(const QString &path);
@@ -88,11 +88,13 @@ signals:
     void connectionStateChanged(const QString &path, VpnConnection::ConnectionState state);
     void orderByConnectedChanged();
 
+protected:
+    void orderConnections(QVector<VpnConnection*> &connections) override;
+
 private:
     bool domainInUse(const QString &domain) const;
     QString createDefaultDomain() const;
     void reorderConnection(VpnConnection * conn);
-    virtual void orderConnections(QVector<VpnConnection*> &connections) override;
     bool compareConnections(const VpnConnection *i, const VpnConnection *j);
     QVariantMap processOpenVpnProvisioningFile(QFile &provisioningFile);
     QVariantMap processOpenconnectProvisioningFile(QFile &provisioningFile);
@@ -103,14 +105,16 @@ private:
     QVariantMap processPbkProvisioningFile(QFile &provisioningFile, const QString &type);
     QVariantMap processWireGuardProvisioningFile(const QFile &provisioningFile);
     void updateBestState(VpnConnection::ConnectionState maxState);
+    void trackConnection(VpnConnection *connection);
 
 private Q_SLOTS:
-    void connectionAdded(const QString &path);
-    void connectionRemoved(const QString &path);
-    void connectionsRefreshed();
-    void updatedConnectionPosition();
-    void connectedChanged();
-    void stateChanged();
+    void onConnectionAdded(const QString &path);
+    void onConnectionRemoved(const QString &path);
+    void onConnectionsRefreshed();
+    void updateConnectionPosition();
+    void onConnectedChanged();
+    void onStateChanged();
+    void updateAutoConnect();
 
 private:
     class CredentialsRepository

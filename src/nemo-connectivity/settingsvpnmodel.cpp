@@ -100,11 +100,13 @@ SettingsVpnModel::SettingsVpnModel(QObject* parent)
     roles.insert(ConnectedRole, "connected");
 
     connect(manager, &VpnManager::connectionAdded,
-            this, &SettingsVpnModel::connectionAdded, Qt::UniqueConnection);
+            this, &SettingsVpnModel::onConnectionAdded, Qt::UniqueConnection);
     connect(manager, &VpnManager::connectionRemoved,
-            this, &SettingsVpnModel::connectionRemoved, Qt::UniqueConnection);
+            this, &SettingsVpnModel::onConnectionRemoved, Qt::UniqueConnection);
     connect(manager, &VpnManager::connectionsRefreshed,
-            this, &SettingsVpnModel::connectionsRefreshed, Qt::UniqueConnection);
+            this, &SettingsVpnModel::onConnectionsRefreshed, Qt::UniqueConnection);
+
+    updateAutoConnect();
 }
 
 SettingsVpnModel::~SettingsVpnModel()
@@ -179,8 +181,7 @@ void SettingsVpnModel::modifyConnection(const QString &path, const QVariantMap &
             if (isDefaultDomain(conn->domain())) {
                 // The connection already has a default domain, no need to change it
                 updatedProperties.remove("domain");
-            }
-            else {
+            } else {
                 updatedProperties.insert(QString("domain"), QVariant::fromValue(createDefaultDomain()));
             }
         }
@@ -198,8 +199,7 @@ void SettingsVpnModel::modifyConnection(const QString &path, const QVariantMap &
                 credentials_.removeCredentials(location);
             }
         }
-    }
-    else {
+    } else {
         qCWarning(lcVpnLog) << "VPN connection modification failed: connection doesn't exist";
     }
 }
@@ -307,13 +307,13 @@ void SettingsVpnModel::reorderConnection(VpnConnection * conn)
     }
 }
 
-void SettingsVpnModel::updatedConnectionPosition()
+void SettingsVpnModel::updateConnectionPosition()
 {
     VpnConnection *conn = qobject_cast<VpnConnection *>(sender());
     reorderConnection(conn);
 }
 
-void SettingsVpnModel::connectedChanged()
+void SettingsVpnModel::onConnectedChanged()
 {
     VpnConnection *conn = qobject_cast<VpnConnection *>(sender());
 
@@ -325,23 +325,18 @@ void SettingsVpnModel::connectedChanged()
     reorderConnection(conn);
 }
 
-void SettingsVpnModel::connectionAdded(const QString &path)
+void SettingsVpnModel::onConnectionAdded(const QString &path)
 {
     qCDebug(lcVpnLog) << "VPN connection added";
     if (VpnConnection *conn = vpnManager()->connection(path)) {
         bool credentialsExist = credentials_.credentialsExist(CredentialsRepository::locationForObjectPath(path));
         conn->setStoreCredentials(credentialsExist);
 
-        connect(conn, &VpnConnection::nameChanged,
-                this, &SettingsVpnModel::updatedConnectionPosition, Qt::UniqueConnection);
-        connect(conn, &VpnConnection::connectedChanged,
-                this, &SettingsVpnModel::connectedChanged, Qt::UniqueConnection);
-        connect(conn, &VpnConnection::stateChanged,
-                this, &SettingsVpnModel::stateChanged, Qt::UniqueConnection);
+        trackConnection(conn);
     }
 }
 
-void SettingsVpnModel::connectionRemoved(const QString &path)
+void SettingsVpnModel::onConnectionRemoved(const QString &path)
 {
     qCDebug(lcVpnLog) << "VPN connection removed";
     if (VpnConnection *conn = vpnManager()->connection(path)) {
@@ -349,7 +344,7 @@ void SettingsVpnModel::connectionRemoved(const QString &path)
     }
 }
 
-void SettingsVpnModel::connectionsRefreshed()
+void SettingsVpnModel::onConnectionsRefreshed()
 {
     qCDebug(lcVpnLog) << "VPN connections refreshed";
     QVector<VpnConnection*> connections = vpnManager()->connections();
@@ -357,12 +352,7 @@ void SettingsVpnModel::connectionsRefreshed()
     // Check to see if the best state has changed
     VpnConnection::ConnectionState maxState = VpnConnection::Idle;
     for (VpnConnection *conn : connections) {
-        connect(conn, &VpnConnection::nameChanged,
-                this, &SettingsVpnModel::updatedConnectionPosition, Qt::UniqueConnection);
-        connect(conn, &VpnConnection::connectedChanged,
-                this, &SettingsVpnModel::connectedChanged, Qt::UniqueConnection);
-        connect(conn, &VpnConnection::stateChanged,
-                this, &SettingsVpnModel::stateChanged, Qt::UniqueConnection);
+        trackConnection(conn);
 
         maxState = getMaxState(conn->state(), maxState);
     }
@@ -370,7 +360,7 @@ void SettingsVpnModel::connectionsRefreshed()
     updateBestState(maxState);
 }
 
-void SettingsVpnModel::stateChanged()
+void SettingsVpnModel::onStateChanged()
 {
     // Emit the state changed signal needed for the VPN EnableSwitch
     VpnConnection *conn = qobject_cast<VpnConnection *>(sender());
@@ -1510,5 +1500,35 @@ void SettingsVpnModel::updateBestState(VpnConnection::ConnectionState maxState)
     if (bestState_ != maxState) {
         bestState_ = maxState;
         emit bestStateChanged();
+    }
+}
+
+void SettingsVpnModel::trackConnection(VpnConnection *connection)
+{
+    connect(connection, &VpnConnection::nameChanged,
+            this, &SettingsVpnModel::updateConnectionPosition, Qt::UniqueConnection);
+    connect(connection, &VpnConnection::connectedChanged,
+            this, &SettingsVpnModel::onConnectedChanged, Qt::UniqueConnection);
+    connect(connection, &VpnConnection::stateChanged,
+            this, &SettingsVpnModel::onStateChanged, Qt::UniqueConnection);
+    connect(connection, &VpnConnection::autoConnectChanged,
+            this, &SettingsVpnModel::updateAutoConnect, Qt::UniqueConnection);
+}
+
+void SettingsVpnModel::updateAutoConnect()
+{
+    bool oldAutoConnect = autoConnect_;
+    bool newAutoConnect = false;
+
+    for (const VpnConnection *conn : connections()) {
+        if (conn->autoConnect()) {
+            newAutoConnect = true;
+            break;
+        }
+    }
+
+    if (oldAutoConnect != newAutoConnect) {
+        autoConnect_ = newAutoConnect;
+        emit autoConnectChanged();
     }
 }
