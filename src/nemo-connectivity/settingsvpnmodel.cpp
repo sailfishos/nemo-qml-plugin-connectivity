@@ -1475,11 +1475,21 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(const QFile &prov
 
             if (settings.contains(QStringLiteral("Endpoint"))) {
                 QStringList endpoint = settings.value(QStringLiteral("Endpoint")).toString().split(u':');
-                rv.insert(QStringLiteral("Host"), QString(endpoint[0]));
-                if (endpoint.size() == 2)
-                    rv.insert(QStringLiteral("WireGuard.EndpointPort"), QString(endpoint[1]));
-                else // No port, use default
+                if (endpoint.size() == 1) { // hostname or IPv4 address, no port
+                    rv.insert(QStringLiteral("Host"), QString(endpoint[0]));
                     rv.insert(QStringLiteral("WireGuard.EndpointPort"), QStringLiteral("51820"));
+                } else if (endpoint.size() == 2) { // hostname or IPv4 address and port
+                    rv.insert(QStringLiteral("Host"), QString(endpoint[0]));
+                    rv.insert(QStringLiteral("WireGuard.EndpointPort"), QString(endpoint[1]));
+                } else if (endpoint.size() > 2) { // IPv6 address, bracketed notation
+                    if (endpoint.last() == "]") { // no port
+                        rv.insert(QStringLiteral("Host"), settings.value(QStringLiteral("Endpoint")).toString());
+                        rv.insert(QStringLiteral("WireGuard.EndpointPort"), QStringLiteral("51820"));
+                    } else {
+                        rv.insert(QStringLiteral("Host"), settings.value(QStringLiteral("Endpoint")).toString());
+                        rv.insert(QStringLiteral("WireGuard.EndpointPort"), QString(endpoint.last()));
+                    }
+                }
             }
 
             /* ConnMan as of now supports only one peer settings */
