@@ -1441,6 +1441,7 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(const QFile &prov
     QStringList groups = settings.childGroups();
     QVariantMap rv;
     bool peerDone = false;
+    int peerCount = 0;
 
     for (const auto &group : groups) {
         settings.beginGroup(group);
@@ -1461,47 +1462,63 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(const QFile &prov
             /* Not used yet, keep for later */
             //if (settings.contains("FwMark"))
                 //rv.insert(QStringLiteral("WireGuard.FwMark")), settings.value(QStringLiteral("FwMark"));
-        } else if (group == QStringLiteral("Peer") && !peerDone) {
+        } else if (group == QStringLiteral("Peer")) {
+            QString wgPeer = QStringLiteral("WireGuard.Peer%1.").arg(peerCount);
+
             if (settings.contains("PublicKey"))
-                rv.insert(QStringLiteral("WireGuard.PublicKey"), settings.value(QStringLiteral("PublicKey")));
+                rv.insert(wgPeer + QStringLiteral("PublicKey"),
+                        settings.value(QStringLiteral("PublicKey")));
 
             /* Optionals */
             if (settings.contains(QStringLiteral("PresharedKey")))
-                rv.insert(QStringLiteral("WireGuard.PresharedKey"), settings.value(QStringLiteral("PresharedKey")));
+                rv.insert(wgPeer + QStringLiteral("PresharedKey"),
+                        settings.value(QStringLiteral("PresharedKey")));
             if (settings.contains(QStringLiteral("AllowedIPs")))
-                rv.insert(QStringLiteral("WireGuard.AllowedIPs"),
+                rv.insert(wgPeer + QStringLiteral("AllowedIPs"),
                         settings.value(QStringLiteral("AllowedIPs")).toStringList().join(","));
             if (settings.contains(QStringLiteral("PersistentKeepalive")))
-                rv.insert(QStringLiteral("WireGuard.PersistentKeepalive"),
-                          settings.value(QStringLiteral("PersistentKeepalive")));
+                rv.insert(wgPeer + QStringLiteral("PersistentKeepalive"),
+                        settings.value(QStringLiteral("PersistentKeepalive")));
 
             if (settings.contains(QStringLiteral("Endpoint"))) {
                 QString endpoint = settings.value(QStringLiteral("Endpoint")).toString();
+
                 /* Just use some dummy as the scheme part for QUrl to parse host and port. */
                 QUrl endpointUrl("wg://" + endpoint);
                 if (endpointUrl.isValid()) {
-                    rv.insert(QStringLiteral("Host"), endpointUrl.host());
+                    if (!peerDone)
+                        rv.insert(QStringLiteral("Host"), endpointUrl.host());
+
+                    rv.insert(wgPeer + QStringLiteral("Endpoint"), endpointUrl.host());
                     /* Port 0 is a wildcard and should not be used, -1 means it cannot be parsed */
-                    rv.insert(QStringLiteral("WireGuard.EndpointPort"), endpointUrl.port() > 0 ?
+                    rv.insert(wgPeer + QStringLiteral("EndpointPort"), endpointUrl.port() > 0 ?
                             QString::number(endpointUrl.port()) : QStringLiteral("51820"));
                 /* Parsing failed, try if the address is an IPv6 address without brackets. */
                 } else if (!endpoint.startsWith('[') && endpoint.indexOf(']') == -1) {
                     /* Add the IPv6 address as is, otherwise mark being as an invalid within <> */
                     QHostAddress hostAddr(endpoint);
-                    if (!hostAddr.isNull() && hostAddr.protocol() == QAbstractSocket::IPv6Protocol)
-                        rv.insert(QStringLiteral("Host"), endpoint);
-                    else
-                        rv.insert(QStringLiteral("Host"), "<" + endpoint + ">");
+                    if (!hostAddr.isNull() &&
+                            hostAddr.protocol() == QAbstractSocket::IPv6Protocol) {
+                        if (!peerDone)
+                            rv.insert(QStringLiteral("Host"), endpoint);
 
-                    rv.insert(QStringLiteral("WireGuard.EndpointPort"),
-                            QStringLiteral("51820"));
+                        rv.insert(wgPeer + QStringLiteral("Endpoint"), endpoint);
+                    } else {
+                        if (!peerDone)
+                            rv.insert(QStringLiteral("Host"), "<" + endpoint + ">");
+                        /* Do not add invalid endpoints */
+                    }
+
+                    rv.insert(wgPeer + QStringLiteral("EndpointPort"), QStringLiteral("51820"));
                 }
             }
 
             /* ConnMan as of now supports only one peer settings */
             peerDone = true;
+            peerCount++;
         }
 
+        rv.insert(QStringLiteral("WireGuard.PeerCount"), QString::number(peerCount));
         settings.endGroup();
     }
 
