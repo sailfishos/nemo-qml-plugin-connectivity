@@ -39,6 +39,8 @@
 #include <QSettings>
 #include <QLoggingCategory>
 #include <QDomDocument>
+#include <QUrl>
+#include <QHostAddress>
 
 #include "vpnmanager.h"
 
@@ -1474,12 +1476,26 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(const QFile &prov
                           settings.value(QStringLiteral("PersistentKeepalive")));
 
             if (settings.contains(QStringLiteral("Endpoint"))) {
-                QStringList endpoint = settings.value(QStringLiteral("Endpoint")).toString().split(u':');
-                rv.insert(QStringLiteral("Host"), QString(endpoint[0]));
-                if (endpoint.size() == 2)
-                    rv.insert(QStringLiteral("WireGuard.EndpointPort"), QString(endpoint[1]));
-                else // No port, use default
-                    rv.insert(QStringLiteral("WireGuard.EndpointPort"), QStringLiteral("51820"));
+                QString endpoint = settings.value(QStringLiteral("Endpoint")).toString();
+                /* Just use some dummy as the scheme part for QUrl to parse host and port. */
+                QUrl endpointUrl("wg://" + endpoint);
+                if (endpointUrl.isValid()) {
+                    rv.insert(QStringLiteral("Host"), endpointUrl.host());
+                    /* Port 0 is a wildcard and should not be used, -1 means it cannot be parsed */
+                    rv.insert(QStringLiteral("WireGuard.EndpointPort"), endpointUrl.port() > 0 ?
+                            QString::number(endpointUrl.port()) : QStringLiteral("51820"));
+                /* Parsing failed, try if the address is an IPv6 address without brackets. */
+                } else if (!endpoint.startsWith('[') && endpoint.indexOf(']') == -1) {
+                    /* Add the IPv6 address as is, otherwise mark being as an invalid within <> */
+                    QHostAddress hostAddr(endpoint);
+                    if (!hostAddr.isNull() && hostAddr.protocol() == QAbstractSocket::IPv6Protocol)
+                        rv.insert(QStringLiteral("Host"), endpoint);
+                    else
+                        rv.insert(QStringLiteral("Host"), "<" + endpoint + ">");
+
+                    rv.insert(QStringLiteral("WireGuard.EndpointPort"),
+                            QStringLiteral("51820"));
+                }
             }
 
             /* ConnMan as of now supports only one peer settings */
