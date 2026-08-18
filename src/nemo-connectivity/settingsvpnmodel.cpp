@@ -1440,7 +1440,6 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(const QFile &prov
     QSettings settings(provisioningFileName, QSettings::IniFormat);
     QStringList groups = settings.childGroups();
     QVariantMap rv;
-    bool peerDone = false;
     int peerCount = 0;
 
     for (const auto &group : groups) {
@@ -1486,7 +1485,7 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(const QFile &prov
                 /* Just use some dummy as the scheme part for QUrl to parse host and port. */
                 QUrl endpointUrl("wg://" + endpoint);
                 if (endpointUrl.isValid()) {
-                    if (!peerDone)
+                    if (!peerCount)
                         rv.insert(QStringLiteral("Host"), endpointUrl.host());
 
                     rv.insert(wgPeer + QStringLiteral("Endpoint"), endpointUrl.host());
@@ -1499,12 +1498,12 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(const QFile &prov
                     QHostAddress hostAddr(endpoint);
                     if (!hostAddr.isNull() &&
                             hostAddr.protocol() == QAbstractSocket::IPv6Protocol) {
-                        if (!peerDone)
+                        if (!peerCount)
                             rv.insert(QStringLiteral("Host"), endpoint);
 
                         rv.insert(wgPeer + QStringLiteral("Endpoint"), endpoint);
                     } else {
-                        if (!peerDone)
+                        if (!peerCount)
                             rv.insert(QStringLiteral("Host"), "<" + endpoint + ">");
                         /* Do not add invalid endpoints */
                     }
@@ -1513,17 +1512,15 @@ QVariantMap SettingsVpnModel::processWireGuardProvisioningFile(const QFile &prov
                 }
             }
 
-            /* ConnMan as of now supports only one peer settings */
-            peerDone = true;
             peerCount++;
         }
 
-        rv.insert(QStringLiteral("WireGuard.PeerCount"), QString::number(peerCount));
         settings.endGroup();
     }
 
     /* No name in the WireGuard config, use filename */
     rv.insert(QStringLiteral("Name"), QFileInfo(provisioningFile).baseName());
+    rv.insert(QStringLiteral("WireGuard.PeerCount"), QString::number(peerCount));
 
     return rv;
 }
